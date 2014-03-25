@@ -21,7 +21,9 @@ module API
       # Parameters:
       #   id (required) - The ID of a project
       #   ref_name (optional) - The name of a repository branch or tag, if not given the default branch is used
-      #   path (optional) - The path to a file. If not provided, use commits for all files
+      #   path (optional) - The path to a file; if not provided, use commits for all files
+      #   page (optional) - Page to start at; defaults to 0
+      #   per_page (optional) - Number of items to fetch per page; defaults to 20
       # Example Request:
       #   GET /projects/:id/repository/commits
       get ":id/repository/commits" do
