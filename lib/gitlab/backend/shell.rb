@@ -54,6 +54,19 @@ module Gitlab
       system "#{gitlab_shell_path}/bin/gitlab-projects", "update-head", "#{path}.git", branch
     end
 
+    # Copy repository to new namespace
+    #
+    # path - project path with namespace
+    # copy_namespace - namespace to copy to
+    # copy_name - name of new project
+    # 
+    # Ex.
+    #  copy_repository("gitlab/gitlab-ci", "randx", "gitlab-ci-clone")
+    # 
+    def copy_repository(path, copy_namespace, copy_name)
+      system "#{gitlab_shell_path}/bin/gitlab-projects", "copy-project", "#{path}.git", copy_namespace, "#{copy_name}.git"
+    end
+
     # Fork repository to new namespace
     #
     # path - project path with namespace
