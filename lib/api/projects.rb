@@ -155,6 +155,36 @@ module API
         user_project.destroy
       end
 
+      # Copy project
+      #
+      # Parameters:
+      #   id: (required) - The ID of the project to be copied
+      #   user_id (required) - The ID of a user
+      #   name (required) - Name for new project
+      # Example Request:
+      #   POST /projects/:id/copy
+      post ":id/copy" do
+        required_attributes! [:user_id, :name]
+        if current_user.id != params[:user_id]
+          authenticated_as_admin!
+        end
+        user = User.find(params[:user_id])
+        name = params[:name]
+        @copied_project = ::Projects::CopyService.new(user_project, user, name).execute
+        present @copied_project, with: Entities::Project
+      end
+
+      # Fork project
+      #
+      # Parameters:
+      #   id: (required) - The ID of the project to be forked
+      # Example Request:
+      #   POST /projects/:id/fork
+      post ":id/fork" do
+        @forked_project = ::Projects::ForkService.new(user_project, current_user).execute
+        present @forked_project, with: Entities::Project
+      end
+
       # Mark this project as forked from another
       #
       # Parameters:
