@@ -155,6 +155,17 @@ module API
         user_project.destroy
       end
 
+      # Fork project
+      #
+      # Parameters:
+      #   id: (required) - The ID of the project to be forked
+      # Example Request:
+      #   POST /projects/:id/fork
+      post ":id/fork" do
+        @forked_project = ::Projects::ForkService.new(user_project, current_user).execute
+        present @forked_project, with: Entities::Project
+      end
+
       # Mark this project as forked from another
       #
       # Parameters:
