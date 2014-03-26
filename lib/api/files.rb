@@ -81,6 +81,7 @@ module API
         else
           user = current_user
         end
+        user_project.ensure_satellite_exists
         result = ::Files::CreateService.new(user_project, user, attrs, branch_name, file_path).execute
 
         if result[:status] == :success

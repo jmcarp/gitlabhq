@@ -14,7 +14,11 @@ module Gitlab
           prepare_satellite!(repo)
 
           # create target branch in satellite at the corresponding commit from bare repo
-          repo.git.checkout({raise: true, timeout: true, b: true}, ref, "origin/#{ref}")
+          begin
+            repo.git.checkout({raise: true, timeout: true, b: true}, ref, "origin/#{ref}")
+          rescue
+            repo.git.checkout({raise: true, timeout: true, b: true}, ref)
+          end
 
           file_path_in_satellite = File.join(repo.working_dir, file_path)
           dir_name_in_satellite = File.dirname(file_path_in_satellite)
@@ -37,7 +41,6 @@ module Gitlab
           # commit the changes
           # will raise CommandFailed when commit fails
           repo.git.commit(raise: true, timeout: true, a: true, m: commit_message)
-
 
           # push commit back to bare repo
           # will raise CommandFailed when push fails
