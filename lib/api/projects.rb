@@ -21,7 +21,7 @@ module API
         @projects = paginate current_user.authorized_projects
         present @projects, with: Entities::Project
       end
-
+      
       # Get an owned projects list for authenticated user
       #
       # Example Request:
@@ -51,6 +51,16 @@ module API
         present user_project, with: Entities::ProjectWithAccess, user: current_user
       end
 
+      # Check whether a project is ready to receive uploads
+      #
+      # Parameters:
+      #   id (required) - The ID of a project
+      # Example Request:
+      #   GET /projects/:id/ready
+      get ":id/ready" do
+        {"ready" => !user_project.repository.raw_repository.nil?}
+      end
+      
       # Get a single project events
       #
       # Parameters:

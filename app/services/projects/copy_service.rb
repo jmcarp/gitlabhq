@@ -19,7 +19,7 @@ module Projects
       if project.valid?
         begin
           Project.transaction do
-            ##First save the DB entries as they can be rolled back if the repo fork fails
+            #First save the DB entries as they can be rolled back if the repo fork fails
             project.build_forked_project_link(forked_to_project_id: project.id, forked_from_project_id: @from_project.id)
             if project.save
               project.users_projects.create(project_access: UsersProject::MASTER, user: current_user)
@@ -28,7 +28,6 @@ module Projects
             unless gitlab_shell.copy_repository(@from_project.path_with_namespace, project.namespace.path, project.name)
               raise "copying failed in gitlab-shell"
             end
-            Gitlab::AppLogger.error "copied in shell"
             project.ensure_satellite_exists
           end
         rescue => ex
