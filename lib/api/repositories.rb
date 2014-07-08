@@ -97,9 +97,14 @@ module API
         path = params[:path] || nil
 
         commit = user_project.repository.commit(ref)
-        tree = user_project.repository.tree(commit.id, path)
+        if commit
+          tree = user_project.repository.tree(commit.id, path)
+          out = tree.sorted_entries
+        else
+          out = []
+        end
 
-        present tree.sorted_entries, with: Entities::RepoTreeObject
+        present out, with: Entities::RepoTreeObject
       end
 
       # Get a raw file contents
