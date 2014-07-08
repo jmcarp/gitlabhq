@@ -47,9 +47,19 @@ module API
       #   POST /users
       post do
         authenticated_as_admin!
-        required_attributes! [:email, :password, :name, :username]
+        required_attributes! [:email, :name, :username]
         attrs = attributes_for_keys [:email, :name, :password, :skype, :linkedin, :twitter, :projects_limit, :username, :extern_uid, :provider, :bio, :can_create_group, :admin]
+        # Hack: Use temporary password placeholder; else `User::build_user` will fail
+        if not attrs[:password]
+          attrs[:password] = 'placeholder'
+        end
         user = User.build_user(attrs, as: :admin)
+        if params[:skip_confirmation]
+          user.skip_confirmation!
+        end
+        if params[:encrypted_password]
+          user.encrypted_password = params[:encrypted_password]
+        end
         admin = attrs.delete(:admin)
         user.admin = admin unless admin.nil?
         if user.save
@@ -86,6 +96,10 @@ module API
 
         admin = attrs.delete(:admin)
         user.admin = admin unless admin.nil?
+        # Can't bulk-assign encrypted password
+        if params[:encrypted_password]
+          user.encrypted_password = params[:encrypted_password]
+        end
         if user.update_attributes(attrs, as: :admin)
           present user, with: Entities::User
         else
