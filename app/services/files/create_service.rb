@@ -7,7 +7,7 @@ module Files
       file_path = path
 
       if repository.branch_names.length > 0
-     
+
         allowed = if project.protected_branch?(ref)
                     can?(current_user, :push_code_to_protected_branches, project)
                   else
@@ -20,6 +20,13 @@ module Files
 
         unless repository.branch_names.include?(ref)
           return error("You can only create files if you are on top of a branch")
+        end
+
+        file_name = File.basename(path)
+        file_path = path
+
+        unless file_name =~ Gitlab::Regex.path_regex
+          return error("Your changes could not be committed, because file name contains not allowed characters")
         end
 
         blob = repository.blob_at_branch(ref, file_path)

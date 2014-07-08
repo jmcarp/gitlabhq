@@ -8,6 +8,11 @@ module API
     def current_user
       private_token = (params[PRIVATE_TOKEN_PARAM] || env[PRIVATE_TOKEN_HEADER]).to_s
       @current_user ||= User.find_by(authentication_token: private_token)
+
+      unless @current_user && Gitlab::UserAccess.allowed?(@current_user)
+        return nil
+      end
+
       identifier = sudo_identifier()
 
       # If the sudo is the current user do nothing
@@ -31,16 +36,6 @@ module API
       end
     end
 
-    def set_current_user_for_thread
-      Thread.current[:current_user] = current_user
-
-      begin
-        yield
-      ensure
-        Thread.current[:current_user] = nil
-      end
-    end
-
     def user_project
       @project ||= find_project(params[:id])
       @project || not_found!
@@ -56,8 +51,12 @@ module API
       end
     end
 
-    def paginate(object)
-      object.page(params[:page]).per(params[:per_page].to_i)
+    def paginate(relation)
+      per_page  = params[:per_page].to_i
+      paginated = relation.page(params[:page]).per(per_page)
+      add_pagination_headers(paginated, per_page)
+
+      paginated
     end
 
     def authenticate!
@@ -72,6 +71,10 @@ module API
       unless abilities.allowed?(current_user, action, subject)
         forbidden!
       end
+    end
+
+    def authorize_push_project
+      authorize! :push_code, user_project
     end
 
     def authorize_admin_project
@@ -95,10 +98,14 @@ module API
 
     def attributes_for_keys(keys)
       attrs = {}
+
       keys.each do |key|
-        attrs[key] = params[key] if params[key].present? or (params.has_key?(key) and params[key] == false)
+        if params[key].present? or (params.has_key?(key) and params[key] == false)
+          attrs[key] = params[key]
+        end
       end
-      attrs
+
+      ActionController::Parameters.new(attrs).permit!
     end
 
     # error helpers
@@ -133,6 +140,18 @@ module API
     end
 
     private
+
+    def add_pagination_headers(paginated, per_page)
+      request_url = request.url.split('?').first
+
+      links = []
+      links << %(<#{request_url}?page=#{paginated.current_page - 1}&per_page=#{per_page}>; rel="prev") unless paginated.first_page?
+      links << %(<#{request_url}?page=#{paginated.current_page + 1}&per_page=#{per_page}>; rel="next") unless paginated.last_page?
+      links << %(<#{request_url}?page=1&per_page=#{per_page}>; rel="first")
+      links << %(<#{request_url}?page=#{paginated.total_pages}&per_page=#{per_page}>; rel="last")
+
+      header 'Link', links.join(', ')
+    end
 
     def abilities
       @abilities ||= begin

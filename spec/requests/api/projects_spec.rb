@@ -1,10 +1,7 @@
 require 'spec_helper'
 
-describe API::API do
+describe API::API, api: true  do
   include ApiHelpers
-  before(:each) { enable_observers }
-  after(:each) { disable_observers }
-
   let(:user) { create(:user) }
   let(:user2) { create(:user) }
   let(:user3) { create(:user) }
@@ -13,6 +10,13 @@ describe API::API do
   let(:snippet) { create(:project_snippet, author: user, project: project, title: 'example') }
   let(:users_project) { create(:users_project, user: user, project: project, project_access: UsersProject::MASTER) }
   let(:users_project2) { create(:users_project, user: user3, project: project, project_access: UsersProject::DEVELOPER) }
+  let(:issue_with_labels) { create(:issue, author: user, assignee: user, project: project, :label_list => "label1, label2") }
+  let(:merge_request_with_labels) do
+    create(:merge_request, :simple, author: user, assignee: user,
+           source_project: project, target_project: project, title: 'Test',
+           label_list: 'label3, label4')
+  end
+
 
   describe "GET /projects" do
     before { project }
@@ -30,7 +34,7 @@ describe API::API do
         response.status.should == 200
         json_response.should be_an Array
         json_response.first['name'].should == project.name
-        json_response.first['owner']['email'].should == user.email
+        json_response.first['owner']['username'].should == user.username
       end
     end
   end
@@ -58,7 +62,7 @@ describe API::API do
         response.status.should == 200
         json_response.should be_an Array
         json_response.first['name'].should == project.name
-        json_response.first['owner']['email'].should == user.email
+        json_response.first['owner']['username'].should == user.username
       end
     end
   end
@@ -119,7 +123,6 @@ describe API::API do
       project = attributes_for(:project, {
         description: Faker::Lorem.sentence,
         issues_enabled: false,
-        wall_enabled: false,
         merge_requests_enabled: false,
         wiki_enabled: false
       })
@@ -201,7 +204,6 @@ describe API::API do
       project = attributes_for(:project, {
         description: Faker::Lorem.sentence,
         issues_enabled: false,
-        wall_enabled: false,
         merge_requests_enabled: false,
         wiki_enabled: false
       })
@@ -265,7 +267,7 @@ describe API::API do
       get api("/projects/#{project.id}", user)
       response.status.should == 200
       json_response['name'].should == project.name
-      json_response['owner']['email'].should == user.email
+      json_response['owner']['username'].should == user.username
     end
 
     it "should return a project by path name" do
@@ -629,6 +631,48 @@ describe API::API do
       it "should not remove a non existing project" do
         delete api("/projects/1328", admin)
         response.status.should == 404
+      end
+    end
+  end
+
+  describe 'GET /projects/:id/labels' do
+    context 'with an issue' do
+      before { issue_with_labels }
+
+      it 'should return project labels' do
+        get api("/projects/#{project.id}/labels", user)
+        response.status.should == 200
+        json_response.should be_an Array
+        json_response.first['name'].should == issue_with_labels.labels.first.name
+        json_response.last['name'].should == issue_with_labels.labels.last.name
+      end
+    end
+
+    context 'with a merge request' do
+      before { merge_request_with_labels }
+
+      it 'should return project labels' do
+        get api("/projects/#{project.id}/labels", user)
+        response.status.should == 200
+        json_response.should be_an Array
+        json_response.first['name'].should == merge_request_with_labels.labels.first.name
+        json_response.last['name'].should == merge_request_with_labels.labels.last.name
+      end
+    end
+
+    context 'with an issue and a merge request' do
+      before do
+        issue_with_labels
+        merge_request_with_labels
+      end
+
+      it 'should return project labels from both' do
+        get api("/projects/#{project.id}/labels", user)
+        response.status.should == 200
+        json_response.should be_an Array
+        all_labels = issue_with_labels.labels.map(&:name).to_a
+                       .concat(merge_request_with_labels.labels.map(&:name).to_a)
+        json_response.map { |e| e['name'] }.should =~ all_labels
       end
     end
   end

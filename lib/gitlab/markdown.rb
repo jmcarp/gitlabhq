@@ -33,10 +33,9 @@ module Gitlab
     # Public: Parse the provided text with GitLab-Flavored Markdown
     #
     # text         - the source text
+    # project      - extra options for the reference links as given to link_to
     # html_options - extra options for the reference links as given to link_to
-    #
-    # Note: reference links will only be generated if @project is set
-    def gfm(text, html_options = {})
+    def gfm(text, project = @project, html_options = {})
       return text if text.nil?
 
       # Duplicate the string so we don't alter the original, then call to_str
@@ -56,14 +55,19 @@ module Gitlab
 
       # TODO: add popups with additional information
 
-      text = parse(text)
+      text = parse(text, project)
 
       # Insert pre block extractions
       text.gsub!(/\{gfm-extraction-(\h{32})\}/) do
         insert_piece($1)
       end
 
-      sanitize text.html_safe, attributes: ActionView::Base.sanitized_allowed_attributes + %w(id class), tags: ActionView::Base.sanitized_allowed_tags + %w(table tr td th)
+      allowed_attributes = ActionView::Base.sanitized_allowed_attributes
+      allowed_tags = ActionView::Base.sanitized_allowed_tags
+
+      sanitize text.html_safe,
+               attributes: allowed_attributes + %w(id class),
+               tags: allowed_tags + %w(table tr td th)
     end
 
     private
@@ -84,11 +88,9 @@ module Gitlab
     #
     # text - Text to parse
     #
-    # Note: reference links will only be generated if @project is set
-    #
     # Returns parsed text
-    def parse(text)
-      parse_references(text) if @project
+    def parse(text, project = @project)
+      parse_references(text, project) if project
       parse_emoji(text)
 
       text
@@ -98,6 +100,7 @@ module Gitlab
       (?<prefix>\W)?                         # Prefix
       (                                      # Reference
          @(?<user>[a-zA-Z][a-zA-Z0-9_\-\.]*) # User name
+        |(?<issue>([A-Z\-]+-)\d+)            # JIRA Issue ID
         |\#(?<issue>([a-zA-Z\-]+-)?\d+)      # Issue ID
         |!(?<merge_request>\d+)              # MR ID
         |\$(?<snippet>\d+)                   # Snippet ID
@@ -109,7 +112,7 @@ module Gitlab
 
     TYPES = [:user, :issue, :merge_request, :snippet, :commit].freeze
 
-    def parse_references(text)
+    def parse_references(text, project = @project)
       # parse reference links
       text.gsub!(REFERENCE_PATTERN) do |match|
         prefix     = $~[:prefix]
@@ -122,7 +125,7 @@ module Gitlab
           # Avoid HTML entities
           if prefix && suffix && prefix[0] == '&' && suffix[-1] == ';'
             match
-          elsif ref_link = reference_link(type, identifier)
+          elsif ref_link = reference_link(type, identifier, project)
             "#{prefix}#{ref_link}#{suffix}"
           else
             match
@@ -152,7 +155,7 @@ module Gitlab
     #
     # Returns boolean
     def valid_emoji?(emoji)
-      Emoji.find_by_name emoji
+      Emoji.find_by_name(emoji)
     end
 
     # Private: Dispatches to a dedicated processing method based on reference
@@ -161,41 +164,80 @@ module Gitlab
     # identifier - Object identifier (Issue ID, SHA hash, etc.)
     #
     # Returns string rendered by the processing method
-    def reference_link(type, identifier)
-      send("reference_#{type}", identifier)
+    def reference_link(type, identifier, project = @project)
+      send("reference_#{type}", identifier, project)
     end
 
-    def reference_user(identifier)
-      if member = @project.team_members.find { |user| user.username == identifier }
-        link_to("@#{identifier}", user_url(identifier), html_options.merge(class: "gfm gfm-team_member #{html_options[:class]}")) if member
+    def reference_user(identifier, project = @project)
+      options = html_options.merge(
+          class: "gfm gfm-team_member #{html_options[:class]}"
+        )
+
+      if identifier == "all"
+        link_to("@all", project_url(project), options)
+      elsif user = User.find_by(username: identifier)
+        link_to("@#{identifier}", user_url(identifier), options)
       end
     end
 
-    def reference_issue(identifier)
-      if @project.issue_exists? identifier
-        url = url_for_issue(identifier)
-        title = title_for_issue(identifier)
+    def reference_issue(identifier, project = @project)
+      if project.used_default_issues_tracker? || !external_issues_tracker_enabled?
+        if project.issue_exists? identifier
+          url = url_for_issue(identifier, project)
+          title = title_for_issue(identifier)
+          options = html_options.merge(
+            title: "Issue: #{title}",
+            class: "gfm gfm-issue #{html_options[:class]}"
+          )
 
-        link_to("##{identifier}", url, html_options.merge(title: "Issue: #{title}", class: "gfm gfm-issue #{html_options[:class]}"))
+          link_to("##{identifier}", url, options)
+        end
+      elsif project.issues_tracker == 'jira'
+        reference_jira_issue(identifier, project)
       end
     end
 
-    def reference_merge_request(identifier)
-      if merge_request = @project.merge_requests.where(iid: identifier).first
-        link_to("!#{identifier}", project_merge_request_url(@project, merge_request), html_options.merge(title: "Merge Request: #{merge_request.title}", class: "gfm gfm-merge_request #{html_options[:class]}"))
+    def reference_merge_request(identifier, project = @project)
+      if merge_request = project.merge_requests.find_by(iid: identifier)
+        options = html_options.merge(
+          title: "Merge Request: #{merge_request.title}",
+          class: "gfm gfm-merge_request #{html_options[:class]}"
+        )
+        url = project_merge_request_url(project, merge_request)
+        link_to("!#{identifier}", url, options)
       end
     end
 
-    def reference_snippet(identifier)
-      if snippet = @project.snippets.where(id: identifier).first
-        link_to("$#{identifier}", project_snippet_url(@project, snippet), html_options.merge(title: "Snippet: #{snippet.title}", class: "gfm gfm-snippet #{html_options[:class]}"))
+    def reference_snippet(identifier, project = @project)
+      if snippet = project.snippets.find_by(id: identifier)
+        options = html_options.merge(
+          title: "Snippet: #{snippet.title}",
+          class: "gfm gfm-snippet #{html_options[:class]}"
+        )
+        link_to("$#{identifier}", project_snippet_url(project, snippet),
+                options)
       end
     end
 
-    def reference_commit(identifier)
-      if @project.valid_repo? && commit = @project.repository.commit(identifier)
-        link_to(identifier, project_commit_url(@project, commit), html_options.merge(title: commit.link_title, class: "gfm gfm-commit #{html_options[:class]}"))
+    def reference_commit(identifier, project = @project)
+      if project.valid_repo? && commit = project.repository.commit(identifier)
+        options = html_options.merge(
+          title: commit.link_title,
+          class: "gfm gfm-commit #{html_options[:class]}"
+        )
+        link_to(identifier, project_commit_url(project, commit), options)
       end
+    end
+
+    def reference_jira_issue(identifier, project = @project)
+      url = url_for_issue(identifier)
+      title = Gitlab.config.issues_tracker[project.issues_tracker]["title"]
+
+      options = html_options.merge(
+        title: "Issue in #{title}",
+        class: "gfm gfm-issue #{html_options[:class]}"
+      )
+      link_to("#{identifier}", url, options)
     end
   end
 end

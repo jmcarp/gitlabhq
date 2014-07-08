@@ -19,19 +19,23 @@
   }
 }
 
-.merge-request .nav-tabs{
+.merge-request .merge-request-tabs{
+  border-bottom: 2px solid $border_primary;
+  margin: 20px 0;
+
   li {
     a {
-      font-weight: bold;
-      padding: 8px 20px;
-      text-align: center;
+      padding: 15px 40px;
+      font-size: 14px;
+      margin-bottom: -2px;
+      border-bottom: 2px solid $border_primary;
+      @include border-radius(0px);
     }
   }
 }
 
 .mr_source_commit,
 .mr_target_commit {
-  margin-top: 10px;
   .commit {
     margin: 0;
     padding: 2px 0;
@@ -44,10 +48,9 @@
 
 .label-branch {
   @include border-radius(4px);
-  padding: 3px 4px;
+  padding: 2px 4px;
   border: none;
-  font-size: 14px;
-  background: #474D57;
+  background: #555;
   color: #fff;
   font-family: $monospace_font;
   font-weight: normal;
@@ -65,7 +68,7 @@
 
 .mr-list {
   .merge-request {
-    padding: 10px;
+    padding: 10px 15px;
     position: relative;
 
     .merge-request-title {
@@ -75,6 +78,10 @@
 
     .merge-request-info {
       color: #999;
+
+      .merge-request-labels {
+        display: inline-block;
+      }
     }
   }
 }
@@ -94,4 +101,24 @@
 .diff-file .close-mr-link,
 .diff-file .reopen-mr-link {
   display: none;
+}
+
+.mr-state-widget {
+  .panel-body {
+    h4 {
+      margin-top: 0px;
+    }
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+.merge-request-show-labels .label {
+  padding: 6px 10px;
+}
+
+.mr-commits .commit {
+  padding: 10px 15px;
 }

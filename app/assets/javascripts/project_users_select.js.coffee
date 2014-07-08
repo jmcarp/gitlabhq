@@ -1,7 +1,7 @@
 @projectUsersSelect =
   init: ->
     $('.ajax-project-users-select').each (i, select) ->
-      project_id = $('body').data('project-id')
+      project_id = $(select).data('project-id') || $('body').data('project-id')
 
       $(select).select2
         placeholder: $(select).data('placeholder') || "Search for a user"
@@ -38,12 +38,8 @@
   projectUserFormatResult: (user) ->
     if user.avatar_url
       avatar = user.avatar_url
-    else if gon.gravatar_enabled
-      avatar = gon.gravatar_url
-      avatar = avatar.replace('%{hash}', md5(user.email))
-      avatar = avatar.replace('%{size}', '24')
     else
-      avatar = gon.relative_url_root + "/assets/no_avatar.png"
+      avatar = gon.default_avatar_url
 
     if user.id == ''
       avatarMarkup = ''

@@ -17,29 +17,12 @@ module TestEnv
   def init(opts = {})
     RSpec::Mocks::setup(self)
 
-    # Disable observers to improve test speed
-    #
-    # You can enable it in whole test case where needed by next string:
-    #
-    #   before(:each) { enable_observers }
-    #
-    disable_observers if opts[:observers] == false
-
     # Disable mailer for spinach tests
     disable_mailer if opts[:mailer] == false
     setup_stubs
 
-
     clear_test_repo_dir if opts[:init_repos] == true
     setup_test_repos(opts) if opts[:repos] == true
-  end
-
-  def enable_observers
-    ActiveRecord::Base.observers.enable(:all)
-  end
-
-  def disable_observers
-    ActiveRecord::Base.observers.disable(:all)
   end
 
   def disable_mailer
@@ -53,7 +36,7 @@ module TestEnv
   def setup_stubs()
     # Use tmp dir for FS manipulations
     repos_path = testing_path()
-    GollumWiki.any_instance.stub(:init_repo) do |path|
+    ProjectWiki.any_instance.stub(:init_repo) do |path|
       create_temp_repo(File.join(repos_path, "#{path}.git"))
     end
 
@@ -89,10 +72,6 @@ module TestEnv
     )
     Repository.any_instance.stub(
       size: 12.45
-    )
-
-    ActivityObserver.any_instance.stub(
-      current_user: double("current_user", id: 1)
     )
   end
 
@@ -165,8 +144,7 @@ module TestEnv
 
   def clear_test_repo_dir
     setup_stubs
-    # Use tmp dir for FS manipulations
-    repos_path = testing_path()
+
     # Remove tmp/test-git-base-path
     FileUtils.rm_rf Gitlab.config.gitlab_shell.repos_path
 

@@ -50,7 +50,9 @@ module Gitlab
           # we look for user by extracting part of their email
           if !user && email && ldap_conf['allow_username_or_email_login']
             uname = email.partition('@').first
-            user = model.find_by(username: uname)
+            # Strip apostrophes since they are disallowed as part of username
+            username = uname.gsub("'", "")
+            user = model.find_by(username: username)
           end
 
           user
@@ -81,16 +83,17 @@ module Gitlab
 
         private
 
+        def find_by_uid_and_provider
+          find_by_uid(uid)
+        end
+
         def find_by_uid(uid)
-          model.where(provider: provider, extern_uid: uid).last
+          # LDAP distinguished name is case-insensitive
+          model.where("provider = ? and lower(extern_uid) = ?", provider, uid.downcase).last
         end
 
         def username
-          (auth.info.nickname || samaccountname).to_s.force_encoding("utf-8")
-        end
-
-        def samaccountname
-          (auth.extra[:raw_info][:samaccountname] || []).first
+          auth.info.nickname.to_s.force_encoding("utf-8")
         end
 
         def provider

@@ -7,31 +7,26 @@ Below we describe the contributing process to GitLab for two reasons. So that co
 ## Common actions
 
 ### Issue team
-- Looks for issues without workflow labels and triages issue
-- Monitors merge requests
-- Closes invalid issues and merge requests with a comment (duplicates, [feature requests](#feature-requests), [fixed in newer version](#issue-fixed-in-newer-version), [issue report for old version](#issue-report-for-old-version), not a problem in GitLab, etc.)
-- Assigns appropriate [labels](#how-we-handle-issues)
-- Asks for feedback from issue reporter/merge request initiator ([invalid issue reports](#improperly-formatted-issue), [format code](#code-format), etc.)
-- Asks for feedback from the relevant developer(s) based on the [list of members and their specialities](https://www.gitlab.com/core-team/)
-- Monitors all issues/merge requests for feedback (but especially ones commented on since automatically watching them):
+- Looks for issues without [workflow labels](#how-we-handle-issues) and triages issue
+- Closes invalid issues with a comment (duplicates, [feature requests](#feature-requests), [fixed in newer version](#issue-fixed-in-newer-version), [issue report for old version](#issue-report-for-old-version), not a problem in GitLab, etc.)
+- Asks for feedback from issue reporter ([invalid issue reports](#improperly-formatted-issue), [format code](#code-format), etc.)
+- Monitors all issues for feedback (but especially ones commented on since automatically watching them)
 - Closes issues with no feedback from the reporter for two weeks
-- Closes stale merge requests
 
-### Development team
+### Merge marshal
 
-- Responds to issues and merge requests the issue team mentions them in
-- Monitors for new issues in _Awaiting developer action/feedback_ with no developer activity (once a week)
-- Monitors for new merge requests (at least once a week)
-- Manages their work queue by looking at issues and merge requests assigned to them
-- Close fixed issues (via commit messages or manually)
-- Be kind to people trying to contribute. Be aware that people can be a non-native or a native English speaker, they might not understand thing or they might be very sensitive to how your word things. Use emoji to express your feelings (heart, star, smile, etc.). Some good tips about giving feedback to merge requests is in the [Thoughtbot code review guide](https://github.com/thoughtbot/guides/tree/master/code-review).
+- Responds to merge requests the issue team mentions them in and monitors for new merge requests
+- Provides feedback to the merge request submitter to improve the merge request (style, tests, etc.)
+- Mark merge requests 'ready-for-merge' when they meet the contribution guidelines
+- Mention developer(s) based on the [list of members and their specialities](https://www.gitlab.com/core-team/)
+- Closes merge requests with no feedback from the reporter for two weeks
 
 ## Priorities of the issue team
 
 1. Mentioning people (critical)
-2. Workflow labels (normal)
-3. Functional labels (minor)
-4. Assigning issues (avoid if possible)
+1. Workflow labels (normal)
+1. Functional labels (minor)
+1. Assigning issues (avoid if possible)
 
 ## Mentioning people
 
@@ -41,11 +36,11 @@ The most important thing is making sure valid issues receive feedback from the d
 
 Workflow labels are purposely not very detailed since that would be hard to keep updated as you would need to reevaluate them after every comment. We optionally use functional labels on demand when want to group related issues to get an overview (for example all issues related to RVM, to tackle them in one go) and to add details to the issue. 
 
-- _Awaiting feedback_: Feedback pending from the reporter
-- _Awaiting confirmation of fix_: The issue should already be solved in **master** (generally you can avoid this workflow item and just close the issue right away)
-- _Attached MR_: There is a MR attached and the discussion should happen there
-  - We need to let issues stay in sync with the MR's. We can do this with a "Closing #XXXX" or "Fixes #XXXX" comment in the MR. We can't close the issue when there is a merge request because sometimes a MR is not good and we just close the MR, then the issue must stay.
-- _Awaiting developer action/feedback_: Issue needs to be fixed or clarified by a developer
+-   *Awaiting feedback*: Feedback pending from the reporter
+-   *Awaiting confirmation of fix*: The issue should already be solved in **master** (generally you can avoid this workflow item and just close the issue right away)
+-   *Attached MR*: There is a MR attached and the discussion should happen there
+    - We need to let issues stay in sync with the MR's. We can do this with a "Closing #XXXX" or "Fixes #XXXX" comment in the MR. We can't close the issue when there is a merge request because sometimes a MR is not good and we just close the MR, then the issue must stay.
+-   *Awaiting developer action/feedback*: Issue needs to be fixed or clarified by a developer
 
 ## Functional labels
 
@@ -56,12 +51,17 @@ These labels describe what development specialities are involved such as: Postgr
 If an issue is complex and needs the attention of a specific person, assignment is a good option but assigning issues might discourage other people from contributing to that issue. We need all the contributions we can get so this should never be discouraged. Also, an assigned person might not have time for a few weeks, so others should feel free to takeover.
 
 ## Label colors
-- Light orange `#fef2c0`: workflow labels for issue team members (awaiting feedback, awaiting confirmation of fix)
-- Bright orange `#eb6420`: workflow labels for core team members (attached MR, awaiting developer action/feedback)
-- Light blue `#82C5FF`: functional labels
-- Green labels `#009800`: issues that can generally be ignored. For example, issues given the following labels normally can be closed immediately:
-  - Feature request (see copy & paste response: [Feature requests](#feature-requests))
-  - Support (see copy & paste response: [Support requests and configuration questions](#support-requests-and-configuration-questions)
+
+-   Light orange `#fef2c0`: workflow labels for issue team members (awaiting feedback, awaiting confirmation of fix)
+-   Bright orange `#eb6420`: workflow labels for core team members (attached MR, awaiting developer action/feedback)
+-   Light blue `#82C5FF`: functional labels
+-   Green labels `#009800`: issues that can generally be ignored. For example, issues given the following labels normally can be closed immediately:
+    - Feature request (see copy & paste response: [Feature requests](#feature-requests))
+    - Support (see copy & paste response: [Support requests and configuration questions](#support-requests-and-configuration-questions)
+
+## Be kind
+
+Be kind to people trying to contribute. Be aware that people can be a non-native or a native English speaker, they might not understand thing or they might be very sensitive to how your word things. Use emoji to express your feelings (heart, star, smile, etc.). Some good tips about giving feedback to merge requests is in the [Thoughtbot code review guide](https://github.com/thoughtbot/guides/tree/master/code-review).
 
 ## Copy & paste responses
 
@@ -71,7 +71,7 @@ Thanks for the issue report. Please reformat your issue to conform to the issue 
 
 ### Feature requests
 
-Thanks for your interest in GitLab. We don't use the issue tracker for feature requests. Please use the [feature request forum](http://feedback.gitlab.com/) for this purpose or create a merge request implementing this feature. Have a look at the \[contribution guidelines\]\(https://gitlab.com/gitlab-org/gitlab-ce/blob/master/CONTRIBUTING.md) for more information.
+Thank you for your interest in improving GitLab. We don't use the issue tracker for feature requests. Things that are wrong but are not a regression compared to older versions of GitLab are considered feature requests and not issues. Please use the [feature request forum](http://feedback.gitlab.com/) for this purpose or create a merge request implementing this feature. Have a look at the \[contribution guidelines\]\(https://gitlab.com/gitlab-org/gitlab-ce/blob/master/CONTRIBUTING.md) for more information.
 
 ### Issue report for old version
 
@@ -79,7 +79,7 @@ Thanks for the issue report but we only support issues for the latest stable ver
 
 ### Support requests and configuration questions
 
-Thanks for your interest in GitLab. We don't use the issue tracker for support requests and configuration questions. Please use the \[support forum\]\(https://groups.google.com/forum/#!forum/gitlabhq), \[Stack Overflow\]\(http://stackoverflow.com/questions/tagged/gitlab), the unofficial #gitlab IRC channel on Freenode or the http://www.gitlab.com paid services for this purpose. Have a look at the \[contribution guidelines\]\(https://gitlab.com/gitlab-org/gitlab-ce/blob/master/CONTRIBUTING.md) for more information.
+Thanks for your interest in GitLab. We don't use the issue tracker for support requests and configuration questions. Please use the \[support forum\]\(https://groups.google.com/forum/#!forum/gitlabhq), \[Stack Overflow\]\(http://stackoverflow.com/questions/tagged/gitlab), the #gitlab IRC channel on Freenode or the http://www.gitlab.com paid services for this purpose. Have a look at the \[contribution guidelines\]\(https://gitlab.com/gitlab-org/gitlab-ce/blob/master/CONTRIBUTING.md) for more information.
 
 ### Code format
 
@@ -101,3 +101,6 @@ It's been at least 2 weeks (and a new release) since we heard from you. I'm clos
 
 This merge request has been closed because a request for more information has not been reacted to for more than 2 weeks. If you respond and conform to the merge request guidelines in our \[contributing guidelines\]\(https://gitlab.com/gitlab-org/gitlab-ce/blob/master/CONTRIBUTING.md#pull-requests) we will reopen this merge request.
 
+### Accepting merge requests
+
+Is there a request on [the feature request forum](http://feedback.gitlab.com/forums/176466-general) that is similar to this? If so, can you make a comment with a link to it? Please be aware that new functionality that is not marked [accepting merge/pull requests](http://feedback.gitlab.com/forums/176466-general/status/796455) on the forum might not make it into GitLab. You might be asked to make changes and even after implementing them your feature might still be declined. If you want to reduce the chance of this happening please have a discussion in the forum first.

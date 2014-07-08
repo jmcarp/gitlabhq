@@ -8,12 +8,10 @@ def linux_only(require_as)
   RUBY_PLATFORM.include?('linux') && require_as
 end
 
-gem "rails", "~> 4.0.0"
+gem "rails", "~> 4.1.0"
 
-gem "protected_attributes"
-gem 'rails-observers'
-gem 'actionpack-page_caching'
-gem 'actionpack-action_caching'
+# Make links from text
+gem 'rails_autolink', '~> 1.1'
 
 # Default values for AR models
 gem "default_value_for", "~> 3.0.0"
@@ -32,7 +30,7 @@ gem 'omniauth-github'
 
 # Extracting information from a git repository
 # Provide access to Gitlab::Git library
-gem "gitlab_git", '~> 5.7.1'
+gem "gitlab_git", '~> 6.0'
 
 # Ruby/Rack Git Smart-HTTP Server Handler
 gem 'gitlab-grack', '~> 2.0.0.pre', require: 'grack'
@@ -41,19 +39,15 @@ gem 'gitlab-grack', '~> 2.0.0.pre', require: 'grack'
 gem 'gitlab_omniauth-ldap', '1.0.4', require: "omniauth-ldap"
 
 # Git Wiki
-gem "gitlab-gollum-lib", "~> 1.1.0", require: 'gollum-lib'
+gem 'gollum-lib', '~> 3.0.0'
 
 # Language detection
 gem "gitlab-linguist", "~> 3.0.0", require: "linguist"
 
 # API
 gem "grape", "~> 0.6.1"
-# Replace with rubygems when nesteted entities get released
-gem "grape-entity", "~> 0.4.1", ref: 'd904381c951e86250c3f44213b349a3dd8e83fb1', git: 'https://github.com/intridea/grape-entity.git' 
+gem "grape-entity", "~> 0.4.2"
 gem 'rack-cors', require: 'rack/cors'
-
-# Email validation
-gem "email_validator", "~> 1.4.0", :require => 'email_validator/strict'
 
 # Format dates and times
 # based on human-friendly examples
@@ -71,8 +65,12 @@ gem "haml-rails"
 # Files attachments
 gem "carrierwave"
 
+# Drag and Drop UI
+gem 'dropzonejs-rails'
+
 # for aws storage
-gem "fog", "~> 1.3.1", group: :aws
+gem "fog", "~> 1.14", group: :aws
+gem "unf", group: :aws
 
 # Authorization
 gem "six"
@@ -82,7 +80,11 @@ gem "seed-fu"
 
 # Markdown to HTML
 gem "redcarpet",     "~> 2.2.2"
-gem "github-markup", "~> 0.7.4", require: 'github/markup', git: 'https://github.com/gitlabhq/markup.git', ref: '61ade389c1e1c159359338f570d18464a44ddbc4' 
+gem "github-markup"
+gem "org-ruby" # For rendering .org files
+
+# Diffs
+gem 'diffy', '~> 3.0.3'
 
 # Asciidoc to HTML
 gem  "asciidoctor"
@@ -102,7 +104,7 @@ gem "acts-as-taggable-on"
 # Background jobs
 gem 'slim'
 gem 'sinatra', require: nil
-gem 'sidekiq'
+gem 'sidekiq', '2.17.0'
 
 # HTTP requests
 gem "httparty"
@@ -133,7 +135,7 @@ gem "gitlab-flowdock-git-hook", "~> 0.4.2"
 gem "gemnasium-gitlab-service", "~> 0.2"
 
 # Slack integration
-gem "slack-notifier", "~> 0.2.0"
+gem "slack-notifier", "~> 0.3.2"
 
 # d3
 gem "d3_rails", "~> 3.1.4"
@@ -142,7 +144,7 @@ gem "d3_rails", "~> 3.1.4"
 gem "underscore-rails", "~> 1.4.4"
 
 # Sanitize user input
-gem "sanitize"
+gem "sanitize", '~> 2.0'
 
 # Protect against bruteforcing
 gem "rack-attack"
@@ -150,7 +152,10 @@ gem "rack-attack"
 # Ace editor
 gem 'ace-rails-ap'
 
-gem "sass-rails"
+# Semantic UI Sass for Sidebar
+gem 'semantic-ui-sass', '~> 0.16.1.0'
+
+gem "sass-rails", '~> 4.0.2'
 gem "coffee-rails"
 gem "uglifier"
 gem "therubyracer"
@@ -159,9 +164,9 @@ gem 'jquery-turbolinks'
 
 gem 'select2-rails'
 gem 'jquery-atwho-rails', "~> 0.3.3"
-gem "jquery-rails",     "2.1.3"
-gem "jquery-ui-rails",  "2.0.2"
-gem "modernizr",        "2.6.2"
+gem "jquery-rails"
+gem "jquery-ui-rails"
+gem "jquery-scrollto-rails"
 gem "raphael-rails", "~> 2.1.2"
 gem 'bootstrap-sass', '~> 3.0'
 gem "font-awesome-rails", '~> 3.2'
@@ -193,7 +198,7 @@ group :development, :test do
   # gem 'rails-dev-tweaks'
   gem 'spinach-rails'
   gem "rspec-rails"
-  gem "capybara"
+  gem "capybara", '~> 2.2.1'
   gem "pry"
   gem "awesome_print"
   gem "database_cleaner"
@@ -201,7 +206,7 @@ group :development, :test do
   gem 'factory_girl_rails'
 
   # Prevent occasions where minitest is not bundled in packaged versions of ruby (see #3826)
-  gem 'minitest', '~> 4.7.0'
+  gem 'minitest', '~> 5.3.0'
 
   # Generate Fake data
   gem "ffaker"
@@ -216,10 +221,9 @@ group :development, :test do
   gem 'rb-inotify', require: linux_only('rb-inotify')
 
   # PhantomJS driver for Capybara
-  gem 'poltergeist', '~> 1.4.1'
+  gem 'poltergeist', '~> 1.5.1'
 
-  gem 'spork', '~> 1.0rc'
-  gem 'jasmine', '2.0.0.rc5'
+  gem 'jasmine', '2.0.2'
 
   gem "spring", '1.1.1'
   gem "spring-commands-rspec", '1.0.1'
@@ -235,5 +239,5 @@ group :test do
 end
 
 group :production do
-  gem "gitlab_meta", '6.0'
+  gem "gitlab_meta", '7.0'
 end

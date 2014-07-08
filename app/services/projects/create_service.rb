@@ -5,27 +5,12 @@ module Projects
     end
 
     def execute
-      # get namespace id
-      namespace_id = params.delete(:namespace_id)
+      @project = Project.new(params)
 
-      # check that user is allowed to set specified visibility_level
+      # Reset visibility levet if is not allowed to set it
       unless Gitlab::VisibilityLevel.allowed_for?(current_user, params[:visibility_level])
-        params.delete(:visibility_level)
+        @project.visibility_level = default_features.visibility_level
       end
-
-      # Load default feature settings
-      default_features = Gitlab.config.gitlab.default_projects_features
-
-      default_opts = {
-        issues_enabled: default_features.issues,
-        wiki_enabled: default_features.wiki,
-        wall_enabled: default_features.wall,
-        snippets_enabled: default_features.snippets,
-        merge_requests_enabled: default_features.merge_requests,
-        visibility_level: default_features.visibility_level
-      }.stringify_keys
-
-      @project = Project.new(default_opts.merge(params))
 
       # Parametrize path for project
       #
@@ -34,13 +19,14 @@ module Projects
       #
       @project.path = @project.name.dup.parameterize unless @project.path.present?
 
+      # get namespace id
+      namespace_id = params[:namespace_id]
 
       if namespace_id
         # Find matching namespace and check if it allowed
         # for current user if namespace_id passed.
-        if allowed_namespace?(current_user, namespace_id)
-          @project.namespace_id = namespace_id
-        else
+        unless allowed_namespace?(current_user, namespace_id)
+          @project.namespace_id = nil
           deny_namespace
           return @project
         end
@@ -52,6 +38,9 @@ module Projects
       @project.creator = current_user
 
       if @project.save
+        log_info("#{@project.owner.name} created a new project \"#{@project.name_with_namespace}\"")
+        system_hook_service.execute_hooks_for(@project, :create)
+
         unless @project.group
           @project.users_projects.create(
             project_access: UsersProject::MASTER,
@@ -74,8 +63,8 @@ module Projects
         if @project.wiki_enabled?
           begin
             # force the creation of a wiki,
-            GollumWiki.new(@project, @project.owner).wiki
-          rescue GollumWiki::CouldNotCreateWikiError => ex
+            ProjectWiki.new(@project, @project.owner).wiki
+          rescue ProjectWiki::CouldNotCreateWikiError => ex
             # Prevent project observer crash
             # if failed to create wiki
             nil
@@ -97,7 +86,7 @@ module Projects
 
     def allowed_namespace?(user, namespace_id)
       namespace = Namespace.find_by(id: namespace_id)
-      current_user.can?(:manage_namespace, namespace)
+      current_user.can?(:create_projects, namespace)
     end
   end
 end

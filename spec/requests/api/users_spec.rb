@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe API::API do
+describe API::API, api: true  do
   include ApiHelpers
 
   let(:user)  { create(:user) }
@@ -20,7 +20,18 @@ describe API::API do
         get api("/users", user)
         response.status.should == 200
         json_response.should be_an Array
-        json_response.first['email'].should == user.email
+        json_response.first['username'].should == user.username
+      end
+    end
+
+    context "when admin" do
+      it "should return an array of users" do
+        get api("/users", admin)
+        response.status.should == 200
+        json_response.should be_an Array
+        json_response.first.keys.should include 'email'
+        json_response.first.keys.should include 'extern_uid'
+        json_response.first.keys.should include 'can_create_project'
       end
     end
   end
@@ -29,7 +40,7 @@ describe API::API do
     it "should return a user by id" do
       get api("/users/#{user.id}", user)
       response.status.should == 200
-      json_response['email'].should == user.email
+      json_response['username'].should == user.username
     end
 
     it "should return a 401 if unauthenticated" do
@@ -84,19 +95,6 @@ describe API::API do
     it "should return 201 Created on success" do
       post api("/users", admin), attributes_for(:user, projects_limit: 3)
       response.status.should == 201
-    end
-
-    it "creating a user should respect default project limit" do
-      limit = 123456
-      Gitlab.config.gitlab.stub(:default_projects_limit).and_return(limit)
-      attr = attributes_for(:user )
-      expect {
-        post api("/users", admin), attr
-      }.to change { User.count }.by(1)
-      user = User.find_by(username: attr[:username])
-      user.projects_limit.should == limit
-      user.theme_id.should == Gitlab::Theme::MARS
-      Gitlab.config.gitlab.unstub(:default_projects_limit)
     end
 
     it "should not create user with invalid email" do
@@ -239,6 +237,67 @@ describe API::API do
       expect {
         post api("/users/#{user.id}/keys", admin), key_attrs
       }.to change{ user.keys.count }.by(1)
+    end
+  end
+
+  describe 'GET /user/:uid/keys' do
+    before { admin }
+
+    context 'when unauthenticated' do
+      it 'should return authentication error' do
+        get api("/users/#{user.id}/keys")
+        response.status.should == 401
+      end
+    end
+
+    context 'when authenticated' do
+      it 'should return 404 for non-existing user' do
+        get api('/users/999999/keys', admin)
+        response.status.should == 404
+      end
+
+      it 'should return array of ssh keys' do
+        user.keys << key
+        user.save
+        get api("/users/#{user.id}/keys", admin)
+        response.status.should == 200
+        json_response.should be_an Array
+        json_response.first['title'].should == key.title
+      end
+    end
+  end
+
+  describe 'DELETE /user/:uid/keys/:id' do
+    before { admin }
+
+    context 'when unauthenticated' do
+      it 'should return authentication error' do
+        delete api("/users/#{user.id}/keys/42")
+        response.status.should == 401
+      end
+    end
+
+    context 'when authenticated' do
+      it 'should delete existing key' do
+        user.keys << key
+        user.save
+        expect {
+          delete api("/users/#{user.id}/keys/#{key.id}", admin)
+        }.to change { user.keys.count }.by(-1)
+        response.status.should == 200
+      end
+
+      it 'should return 404 error if user not found' do
+        user.keys << key
+        user.save
+        delete api("/users/999999/keys/#{key.id}", admin)
+        response.status.should == 404
+      end
+
+      it 'should return 404 error if key not foud' do
+        delete api("/users/#{user.id}/keys/42", admin)
+        response.status.should == 404
+      end
     end
   end
 

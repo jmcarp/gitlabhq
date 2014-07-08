@@ -2,47 +2,48 @@
 #
 # Table name: users
 #
-#  id                     :integer          not null, primary key
-#  email                  :string(255)      default(""), not null
-#  encrypted_password     :string(255)      default(""), not null
-#  reset_password_token   :string(255)
-#  reset_password_sent_at :datetime
-#  remember_created_at    :datetime
-#  sign_in_count          :integer          default(0)
-#  current_sign_in_at     :datetime
-#  last_sign_in_at        :datetime
-#  current_sign_in_ip     :string(255)
-#  last_sign_in_ip        :string(255)
-#  created_at             :datetime         not null
-#  updated_at             :datetime         not null
-#  name                   :string(255)
-#  admin                  :boolean          default(FALSE), not null
-#  projects_limit         :integer          default(10)
-#  skype                  :string(255)      default(""), not null
-#  linkedin               :string(255)      default(""), not null
-#  twitter                :string(255)      default(""), not null
-#  authentication_token   :string(255)
-#  theme_id               :integer          default(1), not null
-#  bio                    :string(255)
-#  failed_attempts        :integer          default(0)
-#  locked_at              :datetime
-#  extern_uid             :string(255)
-#  provider               :string(255)
-#  username               :string(255)
-#  can_create_group       :boolean          default(TRUE), not null
-#  can_create_team        :boolean          default(TRUE), not null
-#  state                  :string(255)
-#  color_scheme_id        :integer          default(1), not null
-#  notification_level     :integer          default(1), not null
-#  password_expires_at    :datetime
-#  created_by_id          :integer
-#  avatar                 :string(255)
-#  confirmation_token     :string(255)
-#  confirmed_at           :datetime
-#  confirmation_sent_at   :datetime
-#  unconfirmed_email      :string(255)
-#  hide_no_ssh_key        :boolean          default(FALSE)
-#  website_url            :string(255)      default(""), not null
+#  id                       :integer          not null, primary key
+#  email                    :string(255)      default(""), not null
+#  encrypted_password       :string(255)      default(""), not null
+#  reset_password_token     :string(255)
+#  reset_password_sent_at   :datetime
+#  remember_created_at      :datetime
+#  sign_in_count            :integer          default(0)
+#  current_sign_in_at       :datetime
+#  last_sign_in_at          :datetime
+#  current_sign_in_ip       :string(255)
+#  last_sign_in_ip          :string(255)
+#  created_at               :datetime
+#  updated_at               :datetime
+#  name                     :string(255)
+#  admin                    :boolean          default(FALSE), not null
+#  projects_limit           :integer          default(10)
+#  skype                    :string(255)      default(""), not null
+#  linkedin                 :string(255)      default(""), not null
+#  twitter                  :string(255)      default(""), not null
+#  authentication_token     :string(255)
+#  theme_id                 :integer          default(1), not null
+#  bio                      :string(255)
+#  failed_attempts          :integer          default(0)
+#  locked_at                :datetime
+#  extern_uid               :string(255)
+#  provider                 :string(255)
+#  username                 :string(255)
+#  can_create_group         :boolean          default(TRUE), not null
+#  can_create_team          :boolean          default(TRUE), not null
+#  state                    :string(255)
+#  color_scheme_id          :integer          default(1), not null
+#  notification_level       :integer          default(1), not null
+#  password_expires_at      :datetime
+#  created_by_id            :integer
+#  last_credential_check_at :datetime
+#  avatar                   :string(255)
+#  confirmation_token       :string(255)
+#  confirmed_at             :datetime
+#  confirmation_sent_at     :datetime
+#  unconfirmed_email        :string(255)
+#  hide_no_ssh_key          :boolean          default(FALSE)
+#  website_url              :string(255)      default(""), not null
 #
 
 require 'spec_helper'
@@ -64,8 +65,6 @@ describe User do
   end
 
   describe "Mass assignment" do
-    it { should_not allow_mass_assignment_of(:projects_limit) }
-    it { should allow_mass_assignment_of(:projects_limit).as(:admin) }
   end
 
   describe 'validations' do
@@ -82,8 +81,14 @@ describe User do
         user = build(:user, email: 'info@example.com')
         expect(user).to be_valid
       end
+
       it 'accepts info+test@example.com' do
         user = build(:user, email: 'info+test@example.com')
+        expect(user).to be_valid
+      end
+
+      it "accepts o'reilly@example.com" do
+        user = build(:user, email: "o'reilly@example.com")
         expect(user).to be_valid
       end
 
@@ -94,6 +99,11 @@ describe User do
 
       it 'rejects mailto:test@example.com' do
         user = build(:user, email: 'mailto:test@example.com')
+        expect(user).to be_invalid
+      end
+
+      it "rejects lol!'+=?><#$%^&*()@gmail.com" do
+        user = build(:user, email: "lol!'+=?><#$%^&*()@gmail.com")
         expect(user).to be_invalid
       end
     end
@@ -133,7 +143,6 @@ describe User do
 
   describe 'projects' do
     before do
-      ActiveRecord::Base.observers.enable(:user_observer)
       @user = create :user
       @project = create :project, namespace: @user.namespace
       @project_2 = create :project, group: create(:group) # Grant MASTER access to the user
@@ -156,7 +165,6 @@ describe User do
 
   describe 'groups' do
     before do
-      ActiveRecord::Base.observers.enable(:user_observer)
       @user = create :user
       @group = create :group
       @group.add_owner(@user)
@@ -169,7 +177,6 @@ describe User do
 
   describe 'group multiple owners' do
     before do
-      ActiveRecord::Base.observers.enable(:user_observer)
       @user = create :user
       @user2 = create :user
       @group = create :group
@@ -183,7 +190,6 @@ describe User do
 
   describe 'namespaced' do
     before do
-      ActiveRecord::Base.observers.enable(:user_observer)
       @user = create :user
       @project = create :project, namespace: @user.namespace
     end
@@ -235,60 +241,38 @@ describe User do
       it { user.first_name.should == 'John' }
     end
 
-    describe 'without defaults' do
+    describe 'with defaults' do
       let(:user) { User.new }
 
-      it "should not apply defaults to user" do
-        user.projects_limit.should == 10
-        user.can_create_group.should be_true
+      it "should apply defaults to user" do
+        user.projects_limit.should == Gitlab.config.gitlab.default_projects_limit
+        user.can_create_group.should == Gitlab.config.gitlab.default_can_create_group
+        user.theme_id.should == Gitlab.config.gitlab.default_theme
+      end
+    end
+
+    describe 'with default overrides' do
+      let(:user) { User.new(projects_limit: 123, can_create_group: false, can_create_team: true, theme_id: Gitlab::Theme::BASIC) }
+
+      it "should apply defaults to user" do
+        user.projects_limit.should == 123
+        user.can_create_group.should be_false
         user.theme_id.should == Gitlab::Theme::BASIC
       end
     end
-    context 'as admin' do
-      describe 'with defaults' do
-        let(:user) { User.build_user({}, as: :admin) }
+  end
 
-        it "should apply defaults to user" do
-          user.projects_limit.should == Gitlab.config.gitlab.default_projects_limit
-          user.can_create_group.should == Gitlab.config.gitlab.default_can_create_group
-          user.theme_id.should == Gitlab.config.gitlab.default_theme
-        end
-      end
+  describe 'search' do
+    let(:user1) { create(:user, username: 'James', email: 'james@testing.com') }
+    let(:user2) { create(:user, username: 'jameson', email: 'jameson@example.com') }
 
-      describe 'with default overrides' do
-        let(:user) { User.build_user({projects_limit: 123, can_create_group: true, can_create_team: true, theme_id: Gitlab::Theme::BASIC}, as: :admin) }
-
-        it "should apply defaults to user" do
-          Gitlab.config.gitlab.default_projects_limit.should_not == 123
-          Gitlab.config.gitlab.default_can_create_group.should_not be_true
-          Gitlab.config.gitlab.default_theme.should_not == Gitlab::Theme::BASIC
-          user.projects_limit.should == 123
-          user.can_create_group.should be_true
-          user.theme_id.should == Gitlab::Theme::BASIC
-        end
-      end
-    end
-
-    context 'as user' do
-      describe 'with defaults' do
-        let(:user) { User.build_user }
-
-        it "should apply defaults to user" do
-          user.projects_limit.should == Gitlab.config.gitlab.default_projects_limit
-          user.can_create_group.should == Gitlab.config.gitlab.default_can_create_group
-          user.theme_id.should == Gitlab.config.gitlab.default_theme
-        end
-      end
-
-      describe 'with default overrides' do
-        let(:user) { User.build_user(projects_limit: 123, can_create_group: true, theme_id: Gitlab::Theme::BASIC) }
-
-        it "should apply defaults to user" do
-          user.projects_limit.should == Gitlab.config.gitlab.default_projects_limit
-          user.can_create_group.should == Gitlab.config.gitlab.default_can_create_group
-          user.theme_id.should == Gitlab.config.gitlab.default_theme
-        end
-      end
+    it "should be case insensitive" do
+      User.search(user1.username.upcase).to_a.should == [user1]
+      User.search(user1.username.downcase).to_a.should == [user1]
+      User.search(user2.username.upcase).to_a.should == [user2]
+      User.search(user2.username.downcase).to_a.should == [user2]
+      User.search(user1.username.downcase).to_a.count.should == 2
+      User.search(user2.username.downcase).to_a.count.should == 1
     end
   end
 
@@ -313,7 +297,7 @@ describe User do
       user.all_ssh_keys.should include(key.key)
     end
   end
-    
+
   describe :avatar_type do
     let(:user) { create(:user) }
 

@@ -8,16 +8,13 @@
 #  title       :string(255)
 #  data        :text
 #  project_id  :integer
-#  created_at  :datetime         not null
-#  updated_at  :datetime         not null
+#  created_at  :datetime
+#  updated_at  :datetime
 #  action      :integer
 #  author_id   :integer
 #
 
 class Event < ActiveRecord::Base
-  attr_accessible :project, :action, :data, :author_id, :project_id,
-                  :target_id, :target_type
-
   default_scope { where.not(author_id: nil) }
 
   CREATED   = 1
@@ -33,6 +30,7 @@ class Event < ActiveRecord::Base
   delegate :name, :email, to: :author, prefix: true, allow_nil: true
   delegate :title, to: :issue, prefix: true, allow_nil: true
   delegate :title, to: :merge_request, prefix: true, allow_nil: true
+  delegate :title, to: :note, prefix: true, allow_nil: true
 
   belongs_to :author, class_name: "User"
   belongs_to :project
@@ -41,20 +39,15 @@ class Event < ActiveRecord::Base
   # For Hash only
   serialize :data
 
+  # Callbacks
+  after_create :reset_project_activity
+
   # Scopes
   scope :recent, -> { order("created_at DESC") }
   scope :code_push, -> { where(action: PUSHED) }
   scope :in_projects, ->(project_ids) { where(project_id: project_ids).recent }
 
   class << self
-    def determine_action(record)
-      if [Issue, MergeRequest].include? record.class
-        Event::CREATED
-      elsif record.kind_of? Note
-        Event::COMMENTED
-      end
-    end
-
     def create_ref_event(project, user, ref, action = 'add', prefix = 'refs/heads')
       commit = project.repository.commit(ref.target)
 
@@ -153,6 +146,10 @@ class Event < ActiveRecord::Base
 
   def merge_request
     target if target_type == "MergeRequest"
+  end
+
+  def note
+    target if target_type == "Note"
   end
 
   def action_name
@@ -294,10 +291,6 @@ class Event < ActiveRecord::Base
     end.to_s
   end
 
-  def wall_note?
-    target.noteable_type.blank?
-  end
-
   def note_target_type
     if target.noteable_type.present?
       target.noteable_type.titleize
@@ -313,6 +306,12 @@ class Event < ActiveRecord::Base
       true
     else
       target.respond_to? :title
+    end
+  end
+
+  def reset_project_activity
+    if project
+      project.update_column(:last_activity_at, self.created_at)
     end
   end
 end

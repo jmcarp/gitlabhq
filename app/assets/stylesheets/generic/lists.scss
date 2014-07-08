@@ -8,10 +8,16 @@
   list-style: none;
 
   li {
-    padding: 10px;
+    padding: 10px 15px;
     min-height: 20px;
     border-bottom: 1px solid #eee;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+
+    &:after {
+      content: " ";
+      display: table;
+      clear: both;
+    }
 
     &.disabled {
       color: #888;
@@ -46,6 +52,12 @@
 
     .author { color: #999; }
 
+    .list-item-name {
+      float: left;
+      position: relative;
+      top: 3px;
+    }
+
     p {
       padding-top: 1px;
       margin: 0;
@@ -59,6 +71,15 @@
     .well-title {
       font-size: 14px;
       line-height: 18px;
+    }
+
+    .row_title {
+      font-weight: 500;
+      color: #444;
+      &:hover {
+        color: #444;
+        text-decoration: underline;
+      }
     }
   }
 }

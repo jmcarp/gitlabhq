@@ -14,7 +14,7 @@ class SnippetsController < ApplicationController
   layout 'navless'
 
   def index
-    @snippets = Snippet.public.fresh.non_expired.page(params[:page]).per(20)
+    @snippets = Snippet.are_public.fresh.non_expired.page(params[:page]).per(20)
   end
 
   def user_index
@@ -26,15 +26,15 @@ class SnippetsController < ApplicationController
 
     if @user == current_user
       @snippets = case params[:scope]
-                  when 'public' then
-                    @snippets.public
-                  when 'private' then
-                    @snippets.private
+                  when 'are_public' then
+                    @snippets.are_public
+                  when 'are_private' then
+                    @snippets.are_private
                   else
                     @snippets
                   end
     else
-      @snippets = @snippets.public
+      @snippets = @snippets.are_public
     end
 
     @snippets = @snippets.page(params[:page]).per(20)
@@ -51,7 +51,7 @@ class SnippetsController < ApplicationController
   end
 
   def create
-    @snippet = PersonalSnippet.new(params[:personal_snippet])
+    @snippet = PersonalSnippet.new(snippet_params)
     @snippet.author = current_user
 
     if @snippet.save
@@ -65,7 +65,7 @@ class SnippetsController < ApplicationController
   end
 
   def update
-    if @snippet.update_attributes(params[:personal_snippet])
+    if @snippet.update_attributes(snippet_params)
       redirect_to snippet_path(@snippet)
     else
       respond_with @snippet
@@ -108,5 +108,9 @@ class SnippetsController < ApplicationController
 
   def set_title
     @title = 'Snippets'
+  end
+
+  def snippet_params
+    params.require(:personal_snippet).permit(:title, :content, :file_name, :private)
   end
 end

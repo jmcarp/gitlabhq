@@ -1,4 +1,4 @@
-## Projects
+# Projects
 
 ### List projects
 
@@ -30,7 +30,6 @@ GET /projects
     "path_with_namespace": "diaspora/diaspora-client",
     "issues_enabled": true,
     "merge_requests_enabled": true,
-    "wall_enabled": false,
     "wiki_enabled": true,
     "snippets_enabled": false,
     "created_at": "2013-09-30T13: 46: 02Z",
@@ -43,7 +42,8 @@ GET /projects
       "owner_id": 1,
       "path": "diaspora",
       "updated_at": "2013-09-30T13: 46: 02Z"
-    }
+    },
+    "archived": false
   },
   {
     "id": 6,
@@ -54,7 +54,7 @@ GET /projects
     "ssh_url_to_repo": "git@example.com:brightbox/puppet.git",
     "http_url_to_repo": "http://example.com/brightbox/puppet.git",
     "web_url": "http://example.com/brightbox/puppet",
-    "owner":  {
+    "owner": {
       "id": 4,
       "name": "Brightbox",
       "created_at": "2013-09-30T13:46:02Z"
@@ -65,12 +65,11 @@ GET /projects
     "path_with_namespace": "brightbox/puppet",
     "issues_enabled": true,
     "merge_requests_enabled": true,
-    "wall_enabled": false,
     "wiki_enabled": true,
     "snippets_enabled": false,
     "created_at": "2013-09-30T13:46:02Z",
     "last_activity_at": "2013-09-30T13:46:02Z",
-    "namespace":  {
+    "namespace": {
       "created_at": "2013-09-30T13:46:02Z",
       "description": "",
       "id": 4,
@@ -78,7 +77,8 @@ GET /projects
       "owner_id": 1,
       "path": "brightbox",
       "updated_at": "2013-09-30T13:46:02Z"
-    }
+    },
+    "archived": false
   }
 ]
 ```
@@ -134,7 +134,6 @@ Parameters:
   "path_with_namespace": "diaspora/diaspora-project-site",
   "issues_enabled": true,
   "merge_requests_enabled": true,
-  "wall_enabled": false,
   "wiki_enabled": true,
   "snippets_enabled": false,
   "created_at": "2013-09-30T13: 46: 02Z",
@@ -147,7 +146,7 @@ Parameters:
     "owner_id": 1,
     "path": "diaspora",
     "updated_at": "2013-09-30T13: 46: 02Z"
-  }
+  },
   "permissions": {
     "project_access": {
       "access_level": 10,
@@ -157,7 +156,8 @@ Parameters:
       "access_level": 50,
       "notification_level": 3
     }
-  }
+  },
+  "archived": false
 }
 ```
 
@@ -175,58 +175,63 @@ Parameters:
 + `id` (required) - The ID or NAMESPACE/PROJECT_NAME of a project
 
 ```json
-
-[{
-  "title": null,
-  "project_id": 15,
-  "action_name": "closed",
-  "target_id": 830,
-  "target_type": "Issue",
-  "author_id": 1,
-  "data": null,
-  "target_title": "Public project search field"
-}, {
-  "title": null,
-  "project_id": 15,
-  "action_name": "opened",
-  "target_id": null,
-  "target_type": null,
-  "author_id": 1,
-  "data": {
-    "before": "50d4420237a9de7be1304607147aec22e4a14af7",
-    "after": "c5feabde2d8cd023215af4d2ceeb7a64839fc428",
-    "ref": "refs/heads/master",
-    "user_id": 1,
-    "user_name": "Dmitriy Zaporozhets",
-    "repository": {
-      "name": "gitlabhq",
-      "url": "git@dev.gitlab.org:gitlab/gitlabhq.git",
-      "description": "GitLab: self hosted Git management software. \r\nDistributed under the MIT License.",
-      "homepage": "https://dev.gitlab.org/gitlab/gitlabhq"
-    },
-    "commits": [{
-      "id": "c5feabde2d8cd023215af4d2ceeb7a64839fc428",
-      "message": "Add simple search to projects in public area",
-      "timestamp": "2013-05-13T18:18:08+00:00",
-      "url": "https://dev.gitlab.org/gitlab/gitlabhq/commit/c5feabde2d8cd023215af4d2ceeb7a64839fc428",
-      "author": {
-        "name": "Dmitriy Zaporozhets",
-        "email": "dmitriy.zaporozhets@gmail.com"
-      }
-    }],
-    "total_commits_count": 1
+[
+  {
+    "title": null,
+    "project_id": 15,
+    "action_name": "closed",
+    "target_id": 830,
+    "target_type": "Issue",
+    "author_id": 1,
+    "data": null,
+    "target_title": "Public project search field"
   },
-  "target_title": null
-}, {
-  "title": null,
-  "project_id": 15,
-  "action_name": "closed",
-  "target_id": 840,
-  "target_type": "Issue",
-  "author_id": 1,
-  "data": null,
-  "target_title": "Finish & merge Code search PR"
-}]
+  {
+    "title": null,
+    "project_id": 15,
+    "action_name": "opened",
+    "target_id": null,
+    "target_type": null,
+    "author_id": 1,
+    "data": {
+      "before": "50d4420237a9de7be1304607147aec22e4a14af7",
+      "after": "c5feabde2d8cd023215af4d2ceeb7a64839fc428",
+      "ref": "refs/heads/master",
+      "user_id": 1,
+      "user_name": "Dmitriy Zaporozhets",
+      "repository": {
+        "name": "gitlabhq",
+        "url": "git@dev.gitlab.org:gitlab/gitlabhq.git",
+        "description": "GitLab: self hosted Git management software. \r\nDistributed under the MIT License.",
+        "homepage": "https://dev.gitlab.org/gitlab/gitlabhq"
+      },
+      "commits": [
+        {
+          "id": "c5feabde2d8cd023215af4d2ceeb7a64839fc428",
+          "message": "Add simple search to projects in public area",
+          "timestamp": "2013-05-13T18:18:08+00:00",
+          "url": "https://dev.gitlab.org/gitlab/gitlabhq/commit/c5feabde2d8cd023215af4d2ceeb7a64839fc428",
+          "author": {
+            "name": "Dmitriy Zaporozhets",
+            "email": "dmitriy.zaporozhets@gmail.com"
+          }
+        }
+      ],
+      "total_commits_count": 1
+    },
+    "target_title": null
+  },
+  {
+    "title": null,
+    "project_id": 15,
+    "action_name": "closed",
+    "target_id": 840,
+    "target_type": "Issue",
+    "author_id": 1,
+    "data": null,
+    "target_title": "Finish & merge Code search PR"
+  }
+]
 ```
 
 
@@ -244,7 +249,6 @@ Parameters:
 + `namespace_id` (optional) - namespace for the new project (defaults to user)
 + `description` (optional) - short project description
 + `issues_enabled` (optional)
-+ `wall_enabled` (optional)
 + `merge_requests_enabled` (optional)
 + `wiki_enabled` (optional) 
 + `snippets_enabled` (optional)
@@ -268,7 +272,6 @@ Parameters:
 + `description` (optional) - short project description
 + `default_branch` (optional) - 'master' by default
 + `issues_enabled` (optional)
-+ `wall_enabled` (optional)
 + `merge_requests_enabled` (optional)
 + `wiki_enabled` (optional) 
 + `snippets_enabled` (optional)
@@ -493,34 +496,38 @@ Parameters:
 ```json
 [
   {
-    "name":"async",
+    "name": "async",
     "commit": {
-      "id":"a2b702edecdf41f07b42653eb1abe30ce98b9fca",
-      "parents": [{
-        "id":"3f94fc7c85061973edc9906ae170cc269b07ca55"
-      }],
+      "id": "a2b702edecdf41f07b42653eb1abe30ce98b9fca",
+      "parents": [
+        {
+          "id": "3f94fc7c85061973edc9906ae170cc269b07ca55"
+        }
+      ],
       "tree": "c68537c6534a02cc2b176ca1549f4ffa190b58ee",
-      "message":"give caolan credit where it's due (up top)",
+      "message": "give caolan credit where it's due (up top)",
       "author": {
-        "name":"Jeremy Ashkenas",
-        "email":"jashkenas@example.com"
+        "name": "Jeremy Ashkenas",
+        "email": "jashkenas@example.com"
       },
       "committer": {
-        "name":"Jeremy Ashkenas",
-        "email":"jashkenas@example.com"
+        "name": "Jeremy Ashkenas",
+        "email": "jashkenas@example.com"
       },
-      "authored_date":"2010-12-08T21:28:50+00:00",
-      "committed_date":"2010-12-08T21:28:50+00:00"
+      "authored_date": "2010-12-08T21:28:50+00:00",
+      "committed_date": "2010-12-08T21:28:50+00:00"
     },
-    "protected":false
+    "protected": false
   },
   {
     "name": "gh-pages",
     "commit": {
       "id": "101c10a60019fe870d21868835f65c25d64968fc",
-      "parents": [{
-        "id": "9c15d2e26945a665131af5d7b6d30a06ba338aaa"
-      }],
+      "parents": [
+        {
+          "id": "9c15d2e26945a665131af5d7b6d30a06ba338aaa"
+        }
+      ],
       "tree": "fb5cc9d45da3014b17a876ad539976a0fb9b352a",
       "message": "Underscore.js 1.5.2",
       "author": {
@@ -537,7 +544,6 @@ Parameters:
     "protected": false
   }
 ]
-
 ```
 
 ### List single branch
@@ -621,3 +627,29 @@ Parameters:
 +   query (required) - A string contained in the project name
 +   per_page (optional) - number of projects to return per page
 +   page (optional) - the page to retrieve
+
+
+## Labels
+
+### List project labels
+
+Get a list of project labels.
+
+```
+GET /projects/:id/labels
+```
+
+Parameters:
+
++ `id` (required) - The ID or NAMESPACE/PROJECT_NAME of a project
+
+```json
+[
+  {
+    "name": "feature"
+  },
+  {
+    "name": "bug"
+  }
+]
+```

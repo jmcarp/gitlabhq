@@ -5,8 +5,8 @@
 #  id                 :integer          not null, primary key
 #  user_id            :integer          not null
 #  project_id         :integer          not null
-#  created_at         :datetime         not null
-#  updated_at         :datetime         not null
+#  created_at         :datetime
+#  updated_at         :datetime
 #  project_access     :integer          default(0), not null
 #  notification_level :integer          default(3), not null
 #
@@ -15,8 +15,6 @@ class UsersProject < ActiveRecord::Base
   include Gitlab::ShellAdapter
   include Notifiable
   include Gitlab::Access
-
-  attr_accessible :user, :user_id, :project_access
 
   belongs_to :user
   belongs_to :project
@@ -36,6 +34,10 @@ class UsersProject < ActiveRecord::Base
   scope :in_project, ->(project) { where(project_id: project.id) }
   scope :in_projects, ->(projects) { where(project_id: projects.map { |p| p.id }) }
   scope :with_user, ->(user) { where(user_id: user.id) }
+
+  after_create :post_create_hook
+  after_update :post_update_hook
+  after_destroy :post_destroy_hook
 
   class << self
 
@@ -113,5 +115,38 @@ class UsersProject < ActiveRecord::Base
 
   def owner?
     project.owner == user
+  end
+
+  def post_create_hook
+    Event.create(
+      project_id: self.project.id,
+      action: Event::JOINED,
+      author_id: self.user.id
+    )
+
+    notification_service.new_team_member(self) unless owner?
+    system_hook_service.execute_hooks_for(self, :create)
+  end
+
+  def post_update_hook
+    notification_service.update_team_member(self) if self.project_access_changed?
+  end
+
+  def post_destroy_hook
+    Event.create(
+      project_id: self.project.id,
+      action: Event::LEFT,
+      author_id: self.user.id
+    )
+
+    system_hook_service.execute_hooks_for(self, :destroy)
+  end
+
+  def notification_service
+    NotificationService.new
+  end
+
+  def system_hook_service
+    SystemHooksService.new
   end
 end

@@ -7,8 +7,8 @@
 #  assignee_id  :integer
 #  author_id    :integer
 #  project_id   :integer
-#  created_at   :datetime         not null
-#  updated_at   :datetime         not null
+#  created_at   :datetime
+#  updated_at   :datetime
 #  position     :integer          default(0)
 #  branch_name  :string(255)
 #  description  :text
@@ -25,8 +25,6 @@ describe Issue do
   end
 
   describe "Mass assignment" do
-    it { should_not allow_mass_assignment_of(:author_id) }
-    it { should_not allow_mass_assignment_of(:project_id) }
   end
 
   describe 'modules' do

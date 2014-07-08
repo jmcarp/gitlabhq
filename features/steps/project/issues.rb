@@ -142,4 +142,37 @@ class ProjectIssues < Spinach::FeatureSteps
            project: project,
            author: project.users.first)
   end
+
+  Given 'empty project "Empty Project"' do
+    create :empty_project, name: 'Empty Project', namespace: @user.namespace
+  end
+
+  When 'I visit empty project page' do
+    project = Project.find_by(name: 'Empty Project')
+    visit project_path(project)
+  end
+
+  And 'I see empty project details with ssh clone info' do
+    project = Project.find_by(name: 'Empty Project')
+    page.all(:css, '.git-empty .clone').each do |element|
+      element.text.should include(project.url_to_repo)
+    end
+  end
+
+  When "I visit empty project's issues page" do
+    project = Project.find_by(name: 'Empty Project')
+    visit project_issues_path(project)
+  end
+
+  step 'I leave a comment with code block' do
+    within(".js-main-target-form") do
+      fill_in "note[note]", with: "```\nCommand [1]: /usr/local/bin/git , see [text](doc/text)\n```"
+      click_button "Add Comment"
+      sleep 0.05
+    end
+  end
+
+  step 'The code block should be unchanged' do
+    page.should have_content("```\nCommand [1]: /usr/local/bin/git , see [text](doc/text)\n```")
+  end
 end

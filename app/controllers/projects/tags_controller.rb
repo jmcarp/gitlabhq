@@ -8,15 +8,13 @@ class Projects::TagsController < Projects::ApplicationController
   before_filter :authorize_admin_project!, only: [:destroy]
 
   def index
-    @tags = Kaminari.paginate_array(@repository.tags.reverse).page(params[:page]).per(30)
+    sorted = VersionSorter.rsort(@repository.tag_names)
+    @tags = Kaminari.paginate_array(sorted).page(params[:page]).per(30)
   end
 
   def create
-    @repository.add_tag(params[:tag_name], params[:ref])
-
-    if new_tag = @repository.find_tag(params[:tag_name])
-      Event.create_ref_event(@project, current_user, new_tag, 'add', 'refs/tags')
-    end
+    @tag = CreateTagService.new.execute(@project, params[:tag_name],
+                                        params[:ref], current_user)
 
     redirect_to project_tags_path(@project)
   end

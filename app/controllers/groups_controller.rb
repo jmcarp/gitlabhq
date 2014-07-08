@@ -5,11 +5,11 @@ class GroupsController < ApplicationController
 
   # Authorize
   before_filter :authorize_read_group!, except: [:new, :create]
-  before_filter :authorize_admin_group!, only: [:edit, :update, :destroy]
+  before_filter :authorize_admin_group!, only: [:edit, :update, :destroy, :projects]
   before_filter :authorize_create_group!, only: [:new, :create]
 
   # Load group projects
-  before_filter :projects, except: [:new, :create]
+  before_filter :load_projects, except: [:new, :create, :projects, :edit, :update]
 
   before_filter :default_filter, only: [:issues, :merge_requests]
 
@@ -22,7 +22,7 @@ class GroupsController < ApplicationController
   end
 
   def create
-    @group = Group.new(params[:group])
+    @group = Group.new(group_params)
     @group.path = @group.name.dup.parameterize if @group.name
 
     if @group.save
@@ -68,7 +68,7 @@ class GroupsController < ApplicationController
     @members = group.users_groups
 
     if params[:search].present?
-      users = group.users.search(params[:search])
+      users = group.users.search(params[:search]).to_a
       @members = @members.where(user_id: users)
     end
 
@@ -79,9 +79,13 @@ class GroupsController < ApplicationController
   def edit
   end
 
+  def projects
+    @projects = @group.projects.page(params[:page])
+  end
+
   def update
-    if @group.update_attributes(params[:group])
-      redirect_to @group, notice: 'Group was successfully updated.'
+    if @group.update_attributes(group_params)
+      redirect_to edit_group_path(@group), notice: 'Group was successfully updated.'
     else
       render action: "edit"
     end
@@ -99,17 +103,17 @@ class GroupsController < ApplicationController
     @group ||= Group.find_by(path: params[:id])
   end
 
-  def projects
+  def load_projects
     @projects ||= ProjectsFinder.new.execute(current_user, group: group).sorted_by_activity.non_archived
   end
 
   def project_ids
-    projects.pluck(:id)
+    @projects.pluck(:id)
   end
 
   # Dont allow unauthorized access to group
   def authorize_read_group!
-    unless @group and (projects.present? or can?(current_user, :read_group, @group))
+    unless @group and (@projects.present? or can?(current_user, :read_group, @group))
       if current_user.nil?
         return authenticate_user!
       else
@@ -154,5 +158,9 @@ class GroupsController < ApplicationController
     end
     params[:state] = 'opened' if params[:state].blank?
     params[:group_id] = @group.id
+  end
+
+  def group_params
+    params.require(:group).permit(:name, :description, :path, :avatar)
   end
 end

@@ -26,6 +26,16 @@ class Projects::EditTreeController < Projects::BaseTreeController
     end
   end
 
+  def preview
+    @content = params[:content]
+
+    diffy = Diffy::Diff.new(@blob.data, @content, diff: '-U 3',
+                            include_diff_info: true)
+    @diff = Gitlab::DiffParser.new(diffy.diff.scan(/.*\n/))
+
+    render layout: false
+  end
+
   private
 
   def blob

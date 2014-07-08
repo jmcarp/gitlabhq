@@ -13,7 +13,12 @@ module API
         @users = @users.active if params[:active].present?
         @users = @users.search(params[:search]) if params[:search].present?
         @users = paginate @users
-        present @users, with: Entities::User
+
+        if current_user.is_admin?
+          present @users, with: Entities::UserFull
+        else
+          present @users, with: Entities::UserBasic
+        end
       end
 
       # Get a single user
@@ -24,7 +29,12 @@ module API
       #   GET /users/:id
       get ":id" do
         @user = User.find(params[:id])
-        present @user, with: Entities::User
+
+        if current_user.is_admin?
+          present @user, with: Entities::UserFull
+        else
+          present @user, with: Entities::UserBasic
+        end
       end
 
       # Create user. Available only for admin
@@ -53,7 +63,9 @@ module API
         if not attrs[:password]
           attrs[:password] = 'placeholder'
         end
-        user = User.build_user(attrs, as: :admin)
+        user = User.build_user(attrs)
+        # TODO: Do we still need to use `as: :admin`?
+        #user = User.build_user(attrs, as: :admin)
         if params[:skip_confirmation]
           user.skip_confirmation!
         end
@@ -63,7 +75,7 @@ module API
         admin = attrs.delete(:admin)
         user.admin = admin unless admin.nil?
         if user.save
-          present user, with: Entities::User
+          present user, with: Entities::UserFull
         else
           not_found!
         end
@@ -96,12 +108,17 @@ module API
 
         admin = attrs.delete(:admin)
         user.admin = admin unless admin.nil?
+<<<<<<< HEAD
         # Can't bulk-assign encrypted password
         if params[:encrypted_password]
           user.encrypted_password = params[:encrypted_password]
         end
         if user.update_attributes(attrs, as: :admin)
           present user, with: Entities::User
+=======
+        if user.update_attributes(attrs)
+          present user, with: Entities::UserFull
+>>>>>>> 4c3785afbf24b39a8574311b9ba36edbc6e26bc2
         else
           not_found!
         end
@@ -122,6 +139,45 @@ module API
         key = user.keys.new attrs
         if key.save
           present key, with: Entities::SSHKey
+        else
+          not_found!
+        end
+      end
+
+      # Get ssh keys of a specified user. Only available to admin users.
+      #
+      # Parameters:
+      # uid (required) - The ID of a user
+      # Example Request:
+      # GET /users/:uid/keys
+      get ':uid/keys' do
+        authenticated_as_admin!
+        user = User.find_by(id: params[:uid])
+        if user
+          present user.keys, with: Entities::SSHKey
+        else
+          not_found!
+        end
+      end
+
+      # Delete existing ssh key of a specified user. Only available to admin
+      # users.
+      #
+      # Parameters:
+      #   uid (required) - The ID of a user
+      #   id (required) - SSH Key ID
+      # Example Request:
+      #   DELETE /users/:uid/keys/:id
+      delete ':uid/keys/:id' do
+        authenticated_as_admin!
+        user = User.find_by(id: params[:uid])
+        if user
+          begin
+            key = user.keys.find params[:id]
+            key.destroy
+          rescue ActiveRecord::RecordNotFound
+            not_found!
+          end
         else
           not_found!
         end

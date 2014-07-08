@@ -3,12 +3,7 @@
 .clgray { color: #BBB }
 .cred { color: #D12F19 }
 .cgreen { color: #4a2 }
-.cblue { color: #29A }
-.cblack { color: #111 }
 .cdark { color: #444 }
-.camber { color: #ffc000 }
-.cwhite { color: #fff!important }
-.bgred { background: #F2DEDE!important }
 
 /** COMMON CLASSES **/
 .prepend-top-10 { margin-top:10px }
@@ -21,6 +16,7 @@
 .append-bottom-15 { margin-bottom:15px }
 .append-bottom-20 { margin-bottom:20px }
 .inline { display: inline-block }
+.center { text-align: center }
 
 .underlined-link { text-decoration: underline; }
 .hint { font-style: italic; color: #999; }
@@ -60,23 +56,12 @@ pre {
 
 .dropdown-menu > li > a:hover,
 .dropdown-menu > li > a:focus {
-  background: #29b;
+  background: $bg_primary;
   color: #FFF
 }
 
-.breadcrumb > li + li:before {
-  content: "/";
-  padding: 0;
-  color: #666;
-}
-
 .str-truncated {
-  display: inline-block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  vertical-align: top;
-  white-space: nowrap;
-  max-width: 82%;
+  @include str-truncated;
 }
 
 /** FLASH message **/
@@ -272,13 +257,6 @@ li.note {
   }
 }
 
-h1.http_status_code {
-  font-size: 56px;
-  line-height: 100px;
-  font-weight: normal;
-  color: #456;
-}
-
 .control-group {
   .controls {
     span {
@@ -354,4 +332,8 @@ table {
 
 @media (max-width: $screen-xs-max) {
   .container .content { margin-top: 20px; }
+}
+
+.wiki .highlight, .note-body .highlight {
+  margin-bottom: 9px;
 }

@@ -32,6 +32,7 @@ FactoryGirl.define do
     path { name.downcase.gsub(/\s/, '_') }
     namespace
     creator
+    snippets_enabled true
 
     trait :public do
       visibility_level Gitlab::VisibilityLevel::PUBLIC
@@ -201,7 +202,7 @@ FactoryGirl.define do
     end
 
     trait :with_attachment do
-      attachment { fixture_file_upload(Rails.root + "spec/fixtures/dk.png", "image/png") }
+      attachment { fixture_file_upload(Rails.root + "spec/fixtures/dk.png", "`/png") }
     end
   end
 
@@ -245,7 +246,7 @@ FactoryGirl.define do
       end
     end
   end
-  
+
   factory :email do
     user
     email do

@@ -42,9 +42,10 @@
     }
   }
 
-  padding: 14px 0px;
+  padding: 12px 0px;
   border-bottom: 1px solid #eee;
   .event-title {
+    @include str-truncated(72%);
     color: #333;
     font-weight: normal;
     font-size: 14px;
@@ -62,6 +63,10 @@
     .event-note {
       color: #666;
       margin-top: 5px;
+
+      .md {
+        font-size: 13px;
+      }
 
       pre {
         border: none;
@@ -131,6 +136,12 @@
       }
     }
   }
+
+  .event-item-timestamp {
+    float: right;
+    color: #999;
+    line-height: 22px;
+  }
 }
 
 /**
@@ -145,12 +156,13 @@
   .filter_icon {
     a {
       text-align:center;
-      background: #EEE;
+      background: $bg_primary;
       margin-bottom: 10px;
       float: left;
       padding: 9px 6px;
       font-size: 18px;
       width: 40px;
+      color: #FFF;
       @include border-radius(3px);
     }
 
@@ -160,5 +172,21 @@
         background: #f9f9f9;
       }
     }
+  }
+}
+
+/*
+ * Last push widget
+ */
+.event-last-push {
+  .event-last-push-text {
+    @include str-truncated(75%);
+    line-height: 24px;
+  }
+}
+
+@media (max-width: $screen-xs-max) {
+  .event-item .event-title {
+    @include str-truncated(65%);
   }
 }

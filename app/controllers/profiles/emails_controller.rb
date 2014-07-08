@@ -7,8 +7,8 @@ class Profiles::EmailsController < ApplicationController
   end
 
   def create
-    @email = current_user.emails.new(params[:email])
-    
+    @email = current_user.emails.new(email_params)
+
     flash[:alert] = @email.errors.full_messages.first unless @email.save
 
     redirect_to profile_emails_url
@@ -22,5 +22,11 @@ class Profiles::EmailsController < ApplicationController
       format.html { redirect_to profile_emails_url }
       format.js { render nothing: true }
     end
+  end
+
+  private
+
+  def email_params
+    params.require(:email).permit(:email)
   end
 end

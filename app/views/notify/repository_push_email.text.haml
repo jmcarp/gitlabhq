@@ -3,10 +3,12 @@
 \
 Commits:
 - @commits.each do |commit|
-  #{commit.short_id} - #{truncate(commit.title, length: 40)}
+  #{commit.short_id} by #{commit.author_name}
+  #{commit.safe_message}
+  \- - - - -
 \
 \
-Diff:
+Changes:
 - @diffs.each do |diff|
   \
   \=====================================
@@ -17,9 +19,9 @@ Diff:
   - else
     = diff.new_path || diff.old_path
   \=====================================
-  = diff.diff
+  != diff.diff
 \
 - if @compare.timeout
   Huge diff. To prevent performance issues it was hidden
 - elsif @compare.commits_over_limit?
-  Diff for big amount of commits is disabled
+  Changes are not shown due to large amount of commits

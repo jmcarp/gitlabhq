@@ -6,8 +6,8 @@
 #  name                   :string(255)
 #  path                   :string(255)
 #  description            :text
-#  created_at             :datetime         not null
-#  updated_at             :datetime         not null
+#  created_at             :datetime
+#  updated_at             :datetime
 #  creator_id             :integer
 #  issues_enabled         :boolean          default(TRUE), not null
 #  wall_enabled           :boolean          default(TRUE), not null
@@ -18,18 +18,15 @@
 #  issues_tracker_id      :string(255)
 #  snippets_enabled       :boolean          default(TRUE), not null
 #  last_activity_at       :datetime
-#  imported               :boolean          default(FALSE), not null
 #  import_url             :string(255)
 #  visibility_level       :integer          default(0), not null
 #  archived               :boolean          default(FALSE), not null
+#  import_status          :string(255)
 #
 
 require 'spec_helper'
 
 describe Project do
-  before { enable_observers }
-  after { disable_observers }
-
   describe "Associations" do
     it { should belong_to(:group) }
     it { should belong_to(:namespace) }
@@ -51,8 +48,6 @@ describe Project do
   end
 
   describe "Mass assignment" do
-    it { should_not allow_mass_assignment_of(:namespace_id) }
-    it { should_not allow_mass_assignment_of(:creator_id) }
   end
 
   describe "Validation" do
@@ -74,7 +69,7 @@ describe Project do
       project2 = build(:project)
       project2.stub(:creator).and_return(double(can_create_project?: false, projects_limit: 0).as_null_object)
       project2.should_not be_valid
-      project2.errors[:limit_reached].first.should match(/Your own projects limit is 0/)
+      project2.errors[:limit_reached].first.should match(/Your project limit is 0/)
     end
   end
 
@@ -84,7 +79,6 @@ describe Project do
     it { should respond_to(:satellite) }
     it { should respond_to(:update_merge_requests) }
     it { should respond_to(:execute_hooks) }
-    it { should respond_to(:transfer) }
     it { should respond_to(:name_with_namespace) }
     it { should respond_to(:owner) }
     it { should respond_to(:path_with_namespace) }

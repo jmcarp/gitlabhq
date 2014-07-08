@@ -1,9 +1,3 @@
-.update-notifications {
-  .radio-inline {
-    margin-right: 9%;
-  }
-}
-
 .account-page {
   fieldset {
     margin-bottom: 15px;
@@ -62,10 +56,10 @@
     text-align: center;
 
     .prev {
-      @extend .thumbnail;
-      height: 30px;
-      width: 175px;
+      height: 80px;
+      width: 160px;
       margin-bottom: 10px;
+      @include border-radius(4px);
 
       &.classic {
         background: #31363e;
@@ -76,7 +70,7 @@
       }
 
       &.modern {
-        background: #345;
+        background: #009871;
       }
 
       &.gray {
@@ -84,7 +78,7 @@
       }
 
       &.violet {
-        background: #547;
+        background: #548;
       }
     }
   }
@@ -98,10 +92,13 @@
     text-align: center;
 
     .prev {
-      @extend .thumbnail;
-      height: 151px;
-      width: 220px;
+      width: 160px;
       margin-bottom: 10px;
+
+      img {
+        max-width: 100%;
+        @include border-radius(4px);
+      }
     }
   }
 }
@@ -113,15 +110,4 @@
     width: 50px;
     height: 50px;
   }
-}
-
-.global-notifications-form .level-title {
-  font-size: 15px;
-  color: #333;
-  font-weight: bold;
-}
-
-.notification-icon-holder {
-  width: 20px;
-  float: left;
 }

@@ -123,6 +123,11 @@ namespace :gitlab do
     def check_init_script_exists
       print "Init script exists? ... "
 
+      if omnibus_gitlab?
+        puts 'skipped (omnibus-gitlab has no init script)'.magenta
+        return
+      end
+
       script_path = "/etc/init.d/gitlab"
 
       if File.exists?(script_path)
@@ -141,6 +146,11 @@ namespace :gitlab do
 
     def check_init_script_up_to_date
       print "Init script up-to-date? ... "
+
+      if omnibus_gitlab?
+        puts 'skipped (omnibus-gitlab has no init script)'.magenta
+        return
+      end
 
       recipe_path = Rails.root.join("lib/support/init.d/", "gitlab")
       script_path = "/etc/init.d/gitlab"
@@ -206,7 +216,7 @@ namespace :gitlab do
       puts ""
 
       Project.find_each(batch_size: 100) do |project|
-        print "#{project.name_with_namespace.yellow} ... "
+        print sanitized_message(project)
 
         if project.satellite.exists?
           puts "yes".green
@@ -342,6 +352,7 @@ namespace :gitlab do
       check_repo_base_is_not_symlink
       check_repo_base_user_and_group
       check_repo_base_permissions
+      check_satellites_permissions
       check_update_hook_is_up_to_date
       check_repos_update_hooks_is_link
       check_gitlab_shell_self_test
@@ -443,6 +454,29 @@ namespace :gitlab do
       end
     end
 
+    def check_satellites_permissions
+      print "Satellites access is drwxr-x---? ... "
+
+      satellites_path = Gitlab.config.satellites.path
+      unless File.exists?(satellites_path)
+        puts "can't check because of previous errors".magenta
+        return
+      end
+
+      if File.stat(satellites_path).mode.to_s(8).ends_with?("0750")
+        puts "yes".green
+      else
+        puts "no".red
+        try_fixing_it(
+          "sudo chmod u+rwx,g=rx,o-rwx #{satellites_path}",
+        )
+        for_more_information(
+          see_installation_guide_section "GitLab"
+        )
+        fix_and_rerun
+      end
+    end
+
     def check_repo_base_user_and_group
       gitlab_shell_ssh_user = Gitlab.config.gitlab_shell.ssh_user
       gitlab_shell_owner_group = Gitlab.config.gitlab_shell.owner_group
@@ -491,7 +525,7 @@ namespace :gitlab do
       puts ""
 
       Project.find_each(batch_size: 100) do |project|
-        print "#{project.name_with_namespace.yellow} ... "
+        print sanitized_message(project)
 
         if project.empty_repo?
           puts "repository is empty".magenta
@@ -554,7 +588,7 @@ namespace :gitlab do
       puts ""
 
       Project.find_each(batch_size: 100) do |project|
-        print "#{project.name_with_namespace.yellow} ... "
+        print sanitized_message(project)
 
         if project.namespace
           puts "yes".green
@@ -580,6 +614,22 @@ namespace :gitlab do
 
     def gitlab_shell_version
       Gitlab::Shell.new.version
+    end
+
+    def required_gitlab_shell_version
+      File.read(File.join(Rails.root, "GITLAB_SHELL_VERSION")).strip
+    end
+
+    def gitlab_shell_major_version
+      required_gitlab_shell_version.split(".")[0].to_i
+    end
+
+    def gitlab_shell_minor_version
+      required_gitlab_shell_version.split(".")[1].to_i
+    end
+
+    def gitlab_shell_patch_version
+      required_gitlab_shell_version.split(".")[2].to_i
     end
 
     def has_gitlab_shell3?
@@ -613,7 +663,7 @@ namespace :gitlab do
       else
         puts "no".red
         try_fixing_it(
-          sudo_gitlab("RAILS_ENV=production script/background_jobs start")
+          sudo_gitlab("RAILS_ENV=production bin/background_jobs start")
         )
         for_more_information(
           see_installation_guide_section("Install Init Script"),
@@ -677,7 +727,20 @@ namespace :gitlab do
     end
 
     def filter
-      Net::LDAP::Filter.present?(ldap_config.uid)
+      uid_filter = Net::LDAP::Filter.present?(ldap_config.uid)
+      if user_filter
+        Net::LDAP::Filter.join(uid_filter, user_filter)
+      else
+        uid_filter
+      end
+    end
+
+    def user_filter
+      if ldap_config['user_filter'] && ldap_config.user_filter.present?
+        Net::LDAP::Filter.construct(ldap_config.user_filter)
+      else
+        nil
+      end
     end
 
     def ldap
@@ -742,7 +805,7 @@ namespace :gitlab do
   end
 
   def check_gitlab_shell
-    required_version = Gitlab::VersionInfo.new(1, 9, 1)
+    required_version = Gitlab::VersionInfo.new(gitlab_shell_major_version, gitlab_shell_minor_version, gitlab_shell_patch_version)
     current_version = Gitlab::VersionInfo.parse(gitlab_shell_version)
 
     print "GitLab Shell version >= #{required_version} ? ... "
@@ -768,6 +831,26 @@ namespace :gitlab do
         "Update your git to a version >= #{required_version} from #{current_version}"
       )
       fix_and_rerun
+    end
+  end
+
+  def omnibus_gitlab?
+    Dir.pwd == '/opt/gitlab/embedded/service/gitlab-rails'
+  end
+
+  def sanitized_message(project)
+    if sanitize
+      "#{project.namespace_id.to_s.yellow}/#{project.id.to_s.yellow} ... "
+    else
+      "#{project.name_with_namespace.yellow} ... "
+    end
+  end
+
+  def sanitize
+    if ENV['SANITIZE'] == "true"
+      true
+    else
+      false
     end
   end
 end

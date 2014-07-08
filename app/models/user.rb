@@ -2,72 +2,71 @@
 #
 # Table name: users
 #
-#  id                     :integer          not null, primary key
-#  email                  :string(255)      default(""), not null
-#  encrypted_password     :string(255)      default(""), not null
-#  reset_password_token   :string(255)
-#  reset_password_sent_at :datetime
-#  remember_created_at    :datetime
-#  sign_in_count          :integer          default(0)
-#  current_sign_in_at     :datetime
-#  last_sign_in_at        :datetime
-#  current_sign_in_ip     :string(255)
-#  last_sign_in_ip        :string(255)
-#  created_at             :datetime         not null
-#  updated_at             :datetime         not null
-#  name                   :string(255)
-#  admin                  :boolean          default(FALSE), not null
-#  projects_limit         :integer          default(10)
-#  skype                  :string(255)      default(""), not null
-#  linkedin               :string(255)      default(""), not null
-#  twitter                :string(255)      default(""), not null
-#  authentication_token   :string(255)
-#  theme_id               :integer          default(1), not null
-#  bio                    :string(255)
-#  failed_attempts        :integer          default(0)
-#  locked_at              :datetime
-#  extern_uid             :string(255)
-#  provider               :string(255)
-#  username               :string(255)
-#  can_create_group       :boolean          default(TRUE), not null
-#  can_create_team        :boolean          default(TRUE), not null
-#  state                  :string(255)
-#  color_scheme_id        :integer          default(1), not null
-#  notification_level     :integer          default(1), not null
-#  password_expires_at    :datetime
-#  created_by_id          :integer
-#  avatar                 :string(255)
-#  confirmation_token     :string(255)
-#  confirmed_at           :datetime
-#  confirmation_sent_at   :datetime
-#  unconfirmed_email      :string(255)
-#  hide_no_ssh_key        :boolean          default(FALSE)
-#  website_url            :string(255)      default(""), not null
+#  id                       :integer          not null, primary key
+#  email                    :string(255)      default(""), not null
+#  encrypted_password       :string(255)      default(""), not null
+#  reset_password_token     :string(255)
+#  reset_password_sent_at   :datetime
+#  remember_created_at      :datetime
+#  sign_in_count            :integer          default(0)
+#  current_sign_in_at       :datetime
+#  last_sign_in_at          :datetime
+#  current_sign_in_ip       :string(255)
+#  last_sign_in_ip          :string(255)
+#  created_at               :datetime
+#  updated_at               :datetime
+#  name                     :string(255)
+#  admin                    :boolean          default(FALSE), not null
+#  projects_limit           :integer          default(10)
+#  skype                    :string(255)      default(""), not null
+#  linkedin                 :string(255)      default(""), not null
+#  twitter                  :string(255)      default(""), not null
+#  authentication_token     :string(255)
+#  theme_id                 :integer          default(1), not null
+#  bio                      :string(255)
+#  failed_attempts          :integer          default(0)
+#  locked_at                :datetime
+#  extern_uid               :string(255)
+#  provider                 :string(255)
+#  username                 :string(255)
+#  can_create_group         :boolean          default(TRUE), not null
+#  can_create_team          :boolean          default(TRUE), not null
+#  state                    :string(255)
+#  color_scheme_id          :integer          default(1), not null
+#  notification_level       :integer          default(1), not null
+#  password_expires_at      :datetime
+#  created_by_id            :integer
+#  last_credential_check_at :datetime
+#  avatar                   :string(255)
+#  confirmation_token       :string(255)
+#  confirmed_at             :datetime
+#  confirmation_sent_at     :datetime
+#  unconfirmed_email        :string(255)
+#  hide_no_ssh_key          :boolean          default(FALSE)
+#  website_url              :string(255)      default(""), not null
 #
 
 require 'carrierwave/orm/activerecord'
 require 'file_size_validator'
 
 class User < ActiveRecord::Base
+  include Gitlab::ConfigHelper
+  extend Gitlab::ConfigHelper
+
+  default_value_for :admin, false
+  default_value_for :can_create_group, gitlab_config.default_can_create_group
+  default_value_for :can_create_team, false
+  default_value_for :hide_no_ssh_key, false
+  default_value_for :projects_limit, gitlab_config.default_projects_limit
+  default_value_for :theme_id, gitlab_config.default_theme
+
   devise :database_authenticatable, :token_authenticatable, :lockable, :async,
          :recoverable, :rememberable, :trackable, :validatable, :omniauthable, :confirmable, :registerable
-
-  attr_accessible :email, :password, :password_confirmation, :remember_me, :bio, :name, :username,
-                  :skype, :linkedin, :twitter, :website_url, :color_scheme_id, :theme_id, :force_random_password,
-                  :extern_uid, :provider, :password_expires_at, :avatar, :hide_no_ssh_key,
-                  as: [:default, :admin]
-
-  attr_accessible :projects_limit, :can_create_group,
-                  as: :admin
 
   attr_accessor :force_random_password
 
   # Virtual attribute for authenticating by either username or email
   attr_accessor :login
-
-  # Add login to attr_accessible
-  attr_accessible :login
-
 
   #
   # Relations
@@ -84,6 +83,8 @@ class User < ActiveRecord::Base
   has_many :users_groups, dependent: :destroy
   has_many :groups, through: :users_groups
   has_many :owned_groups, -> { where users_groups: { group_access: UsersGroup::OWNER } }, through: :users_groups, source: :group
+  has_many :masters_groups, -> { where users_groups: { group_access: UsersGroup::MASTER } }, through: :users_groups, source: :group
+
   # Projects
   has_many :groups_projects,          through: :groups, source: :projects
   has_many :personal_projects,        through: :namespace, source: :projects
@@ -112,7 +113,7 @@ class User < ActiveRecord::Base
   validates :username, presence: true, uniqueness: { case_sensitive: false },
             exclusion: { in: Gitlab::Blacklist.path },
             format: { with: Gitlab::Regex.username_regex,
-                      message: "only letters, digits & '_' '-' '.' allowed. Letter should be first" }
+                      message: Gitlab::Regex.username_regex_message }
 
   validates :notification_level, inclusion: { in: Notification.notification_levels }, presence: true
   validate :namespace_uniq, if: ->(user) { user.username_changed? }
@@ -124,6 +125,10 @@ class User < ActiveRecord::Base
   before_validation :sanitize_attrs
 
   before_save :ensure_authentication_token
+  after_save :ensure_namespace_correct
+  after_create :post_create_hook
+  after_destroy :post_destroy_hook
+
 
   alias_attribute :private_token, :authentication_token
 
@@ -204,27 +209,15 @@ class User < ActiveRecord::Base
     end
 
     def search query
-      where("name LIKE :query OR email LIKE :query OR username LIKE :query", query: "%#{query}%")
+      where("lower(name) LIKE :query OR lower(email) LIKE :query OR lower(username) LIKE :query", query: "%#{query.downcase}%")
     end
 
     def by_username_or_id(name_or_id)
       where('users.username = ? OR users.id = ?', name_or_id.to_s, name_or_id.to_i).first
     end
 
-    def build_user(attrs = {}, options= {})
-      if options[:as] == :admin
-        User.new(defaults.merge(attrs.symbolize_keys), options)
-      else
-        User.new(attrs, options).with_defaults
-      end
-    end
-
-    def defaults
-      {
-        projects_limit: Gitlab.config.gitlab.default_projects_limit,
-        can_create_group: Gitlab.config.gitlab.default_can_create_group,
-        theme_id: Gitlab.config.gitlab.default_theme
-      }
+    def build_user(attrs = {})
+      User.new(attrs)
     end
   end
 
@@ -302,7 +295,7 @@ class User < ActiveRecord::Base
   end
 
   def can_change_username?
-    Gitlab.config.gitlab.username_changing_enabled
+    gitlab_config.username_changing_enabled
   end
 
   def can_create_project?
@@ -360,7 +353,7 @@ class User < ActiveRecord::Base
   end
 
   def several_namespaces?
-    owned_groups.any?
+    owned_groups.any? || masters_groups.any?
   end
 
   def namespace_id
@@ -461,5 +454,57 @@ class User < ActiveRecord::Base
 
   def all_ssh_keys
     keys.map(&:key)
+  end
+
+  def temp_oauth_email?
+    email =~ /\Atemp-email-for-oauth/
+  end
+
+  def generate_tmp_oauth_email
+    self.email = "temp-email-for-oauth-#{username}@gitlab.localhost"
+  end
+
+  def public_profile?
+    authorized_projects.public_only.any?
+  end
+
+  def avatar_url(size = nil)
+    if avatar.present?
+      URI::join(gitlab_config.url, avatar.url).to_s
+    else
+      GravatarService.new.execute(email, size)
+    end
+  end
+
+  def ensure_namespace_correct
+    # Ensure user has namespace
+    self.create_namespace!(path: self.username, name: self.username) unless self.namespace
+
+    if self.username_changed?
+      self.namespace.update_attributes(path: self.username, name: self.username)
+    end
+  end
+
+  def post_create_hook
+    log_info("User \"#{self.name}\" (#{self.email}) was created")
+    notification_service.new_user(self)
+    system_hook_service.execute_hooks_for(self, :create)
+  end
+
+  def post_destroy_hook
+    log_info("User \"#{self.name}\" (#{self.email})  was removed")
+    system_hook_service.execute_hooks_for(self, :destroy)
+  end
+
+  def notification_service
+    NotificationService.new
+  end
+
+  def log_info message
+    Gitlab::AppLogger.info message
+  end
+
+  def system_hook_service
+    SystemHooksService.new
   end
 end

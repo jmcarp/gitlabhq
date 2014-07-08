@@ -1,6 +1,6 @@
 class Projects::MilestonesController < Projects::ApplicationController
   before_filter :module_enabled
-  before_filter :milestone, only: [:edit, :update, :destroy, :show]
+  before_filter :milestone, only: [:edit, :update, :destroy, :show, :sort_issues, :sort_merge_requests]
 
   # Allow read any milestone
   before_filter :authorize_read_milestone!
@@ -37,8 +37,7 @@ class Projects::MilestonesController < Projects::ApplicationController
   end
 
   def create
-    @milestone = @project.milestones.new(params[:milestone])
-    @milestone.author_id_of_changes = current_user.id
+    @milestone = Milestones::CreateService.new(project, current_user, milestone_params).execute
 
     if @milestone.save
       redirect_to project_milestone_path(@project, @milestone)
@@ -48,7 +47,7 @@ class Projects::MilestonesController < Projects::ApplicationController
   end
 
   def update
-    @milestone.update_attributes(params[:milestone].merge(author_id_of_changes: current_user.id))
+    @milestone = Milestones::UpdateService.new(project, current_user, milestone_params).execute(milestone)
 
     respond_to do |format|
       format.js
@@ -73,6 +72,26 @@ class Projects::MilestonesController < Projects::ApplicationController
     end
   end
 
+  def sort_issues
+    @issues = @milestone.issues.where(id: params['sortable_issue'])
+    @issues.each do |issue|
+      issue.position = params['sortable_issue'].index(issue.id.to_s) + 1
+      issue.save
+    end
+
+    render json: { saved: true }
+  end
+
+  def sort_merge_requests
+    @merge_requests = @milestone.merge_requests.where(id: params['sortable_merge_request'])
+    @merge_requests.each do |merge_request|
+      merge_request.position = params['sortable_merge_request'].index(merge_request.id.to_s) + 1
+      merge_request.save
+    end
+
+    render json: { saved: true }
+  end
+
   protected
 
   def milestone
@@ -85,5 +104,9 @@ class Projects::MilestonesController < Projects::ApplicationController
 
   def module_enabled
     return render_404 unless @project.issues_enabled
+  end
+
+  def milestone_params
+    params.require(:milestone).permit(:title, :description, :due_date, :state_event)
   end
 end

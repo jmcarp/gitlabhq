@@ -28,23 +28,24 @@
       = link_to 'Reset', admin_users_path, class: "btn btn-cancel"
 
   .col-md-9
-    .ui-box
-      .title
+    .panel.panel-default
+      .panel-heading
         Users (#{@users.total_count})
-        .pull-right
+        .panel-head-actions
           = link_to 'New User', new_admin_user_path, class: "btn btn-new"
       %ul.well-list
         - @users.each do |user|
           %li
-            - if user.blocked?
-              %i.icon-lock.cred
-            - else
-              %i.icon-user.cgreen
-            = link_to user.name, [:admin, user]
-            - if user.admin?
-              %strong.cred (Admin)
-            - if user == current_user
-              %span.cred It's you!
+            .list-item-name
+              - if user.blocked?
+                %i.icon-lock.cred
+              - else
+                %i.icon-user.cgreen
+              = link_to user.name, [:admin, user]
+              - if user.admin?
+                %strong.cred (Admin)
+              - if user == current_user
+                %span.cred It's you!
             .pull-right
               %span.light
                 %i.icon-envelope

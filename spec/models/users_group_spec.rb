@@ -6,8 +6,8 @@
 #  group_access       :integer          not null
 #  group_id           :integer          not null
 #  user_id            :integer          not null
-#  created_at         :datetime         not null
-#  updated_at         :datetime         not null
+#  created_at         :datetime
+#  updated_at         :datetime
 #  notification_level :integer          default(3), not null
 #
 
@@ -20,7 +20,6 @@ describe UsersGroup do
   end
 
   describe "Mass assignment" do
-    it { should_not allow_mass_assignment_of(:group_id) }
   end
 
   describe "Validation" do
@@ -36,5 +35,33 @@ describe UsersGroup do
   describe "Delegate methods" do
     it { should respond_to(:user_name) }
     it { should respond_to(:user_email) }
+  end
+
+  context 'notification' do
+    describe "#after_create" do
+      it "should send email to user" do
+        membership = build(:users_group)
+        membership.stub(notification_service: double('NotificationService').as_null_object)
+        membership.should_receive(:notification_service)
+        membership.save
+      end
+    end
+
+    describe "#after_update" do
+      before do
+        @membership = create :users_group
+        @membership.stub(notification_service: double('NotificationService').as_null_object)
+      end
+
+      it "should send email to user" do
+        @membership.should_receive(:notification_service)
+        @membership.update_attribute(:group_access, UsersGroup::MASTER)
+      end
+
+      it "does not send an email when the access level has not changed" do
+        @membership.should_not_receive(:notification_service)
+        @membership.update_attribute(:group_access, UsersGroup::OWNER)
+      end
+    end
   end
 end

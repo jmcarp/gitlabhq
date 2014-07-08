@@ -1,7 +1,10 @@
 %ul
   = nav_link(path: 'groups#show', html_options: {class: 'home'}) do
     = link_to group_path(@group), title: "Home" do
-      %i.icon-home
+      Activity
+  = nav_link(path: 'milestones#index') do
+    = link_to group_milestones_path(@group) do
+      Milestones
   = nav_link(path: 'groups#issues') do
     = link_to issues_group_path(@group) do
       Issues

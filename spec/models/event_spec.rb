@@ -8,8 +8,8 @@
 #  title       :string(255)
 #  data        :text
 #  project_id  :integer
-#  created_at  :datetime         not null
-#  updated_at  :datetime         not null
+#  created_at  :datetime
+#  updated_at  :datetime
 #  action      :integer
 #  author_id   :integer
 #
@@ -64,27 +64,5 @@ describe Event do
     it { @event.tag?.should be_false }
     it { @event.branch_name.should == "master" }
     it { @event.author.should == @user }
-  end
-
-  describe 'Team events' do
-    let(:user_project) { double.as_null_object }
-    let(:observer) { UsersProjectObserver.instance }
-
-    before {
-      Event.should_receive :create
-      observer.stub(notification: double.as_null_object)
-    }
-
-    describe "Joined project team" do
-      it "should create event" do
-        observer.after_create user_project
-      end
-    end
-
-    describe "Left project team" do
-      it "should create event" do
-        observer.after_destroy user_project
-      end
-    end
   end
 end

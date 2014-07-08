@@ -6,8 +6,8 @@
 #  name        :string(255)      not null
 #  path        :string(255)      not null
 #  owner_id    :integer
-#  created_at  :datetime         not null
-#  updated_at  :datetime         not null
+#  created_at  :datetime
+#  updated_at  :datetime
 #  type        :string(255)
 #  description :string(255)      default(""), not null
 #  avatar      :string(255)
@@ -16,8 +16,6 @@
 class Namespace < ActiveRecord::Base
   include Gitlab::ShellAdapter
 
-  attr_accessible :name, :description, :path
-
   has_many :projects, dependent: :destroy
   belongs_to :owner, class_name: "User"
 
@@ -25,12 +23,12 @@ class Namespace < ActiveRecord::Base
   validates :name, presence: true, uniqueness: true,
             length: { within: 0..255 },
             format: { with: Gitlab::Regex.name_regex,
-                      message: "only letters, digits, spaces & '_' '-' '.' allowed." }
+                      message: Gitlab::Regex.name_regex_message }
   validates :description, length: { within: 0..255 }
   validates :path, uniqueness: { case_sensitive: false }, presence: true, length: { within: 1..255 },
             exclusion: { in: Gitlab::Blacklist.path },
             format: { with: Gitlab::Regex.path_regex,
-                      message: "only letters, digits & '_' '-' '.' allowed. Letter should be first" }
+                      message: Gitlab::Regex.path_regex_message }
 
   delegate :name, to: :owner, allow_nil: true, prefix: true
 
@@ -46,14 +44,6 @@ class Namespace < ActiveRecord::Base
 
   def self.global_id
     'GLN'
-  end
-  
-  def projects_accessible_to(user)
-    projects.accessible_to(user)
-  end
-  
-  def has_projects_accessible_to?(user)
-    projects_accessible_to(user).present?
   end
 
   def to_param

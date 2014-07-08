@@ -1,63 +1,6 @@
-## Wall
+# Notes
 
-### List project wall notes
-
-Get a list of project wall notes.
-
-```
-GET /projects/:id/notes
-```
-
-Parameters:
-
-+ `id` (required) - The ID of a project
-
-```json
-[
-  {
-    "id": 522,
-    "body": "The solution is rather tricky",
-    "attachment":null,
-    "author": {
-      "id": 1,
-      "username": "john_smith",
-      "email": "john@example.com",
-      "name": "John Smith",
-      "state": "active",
-      "created_at": "2012-05-23T08:00:58Z"
-    },
-    "created_at": "2012-11-27T19:16:44Z"
-  }
-]
-```
-
-### Get single wall note
-
-Returns a single wall note.
-
-```
-GET /projects/:id/notes/:note_id
-```
-
-Parameters:
-
-+ `id` (required) - The ID of a project
-+ `note_id` (required) - The ID of a wall note
-
-
-### Create new wall note
-
-Creates a new wall note.
-
-```
-POST /projects/:id/notes
-```
-
-Parameters:
-
-+ `id` (required) - The ID of a project
-+ `body` (required) - The content of a note
-
+Notes are comments on snippets, issues or merge requests.
 
 ## Issues
 
@@ -77,32 +20,32 @@ Parameters:
 ```json
 [
   {
-    "id":302,
-    "body":"_Status changed to closed_",
-    "attachment":null,
-    "author":{
-      "id":1,
-      "username":"pipin",
-      "email":"admin@example.com",
-      "name":"Pip",
-      "state":"active",
-      "created_at":"2013-09-30T13:46:01Z"
+    "id": 302,
+    "body": "_Status changed to closed_",
+    "attachment": null,
+    "author": {
+      "id": 1,
+      "username": "pipin",
+      "email": "admin@example.com",
+      "name": "Pip",
+      "state": "active",
+      "created_at": "2013-09-30T13:46:01Z"
     },
-    "created_at":"2013-10-02T09:22:45Z"
+    "created_at": "2013-10-02T09:22:45Z"
   },
   {
-    "id":305,
-    "body":"Text of the comment\r\n",
-    "attachment":null,
-    "author":{
-      "id":1,
-      "username":"pipin",
-      "email":"admin@example.com",
-      "name":"Pip",
-      "state":"active",
-      "created_at":"2013-09-30T13:46:01Z"
+    "id": 305,
+    "body": "Text of the comment\r\n",
+    "attachment": null,
+    "author": {
+      "id": 1,
+      "username": "pipin",
+      "email": "admin@example.com",
+      "name": "Pip",
+      "state": "active",
+      "created_at": "2013-09-30T13:46:01Z"
     },
-    "created_at":"2013-10-02T09:56:03Z"
+    "created_at": "2013-10-02T09:56:03Z"
   }
 ]
 ```
@@ -169,20 +112,20 @@ Parameters:
 
 ```json
 {
-  "id":52,
-  "title":"Snippet",
-  "file_name":"snippet.rb",
-  "author":{
-    "id":1,
-    "username":"pipin",
-    "email":"admin@example.com",
-    "name":"Pip",
-    "state":"active",
-    "created_at":"2013-09-30T13:46:01Z"
+  "id": 52,
+  "title": "Snippet",
+  "file_name": "snippet.rb",
+  "author": {
+    "id": 1,
+    "username": "pipin",
+    "email": "admin@example.com",
+    "name": "Pip",
+    "state": "active",
+    "created_at": "2013-09-30T13:46:01Z"
   },
-  "expires_at":null,
-  "updated_at":"2013-10-02T07:34:20Z",
-  "created_at":"2013-10-02T07:34:20Z"
+  "expires_at": null,
+  "updated_at": "2013-10-02T07:34:20Z",
+  "created_at": "2013-10-02T07:34:20Z"
 }
 ```
 
@@ -233,18 +176,18 @@ Parameters:
 
 ```json
 {
-  "id":301,
-  "body":"Comment for MR",
-  "attachment":null,
-  "author":{
-    "id":1,
-    "username":"pipin",
-    "email":"admin@example.com",
-    "name":"Pip",
-    "state":"active",
-    "created_at":"2013-09-30T13:46:01Z"
+  "id": 301,
+  "body": "Comment for MR",
+  "attachment": null,
+  "author": {
+    "id": 1,
+    "username": "pipin",
+    "email": "admin@example.com",
+    "name": "Pip",
+    "state": "active",
+    "created_at": "2013-09-30T13:46:01Z"
   },
-  "created_at":"2013-10-02T08:57:14Z"
+  "created_at": "2013-10-02T08:57:14Z"
 }
 ```
 

@@ -8,11 +8,12 @@ class Admin::UsersController < Admin::ApplicationController
   end
 
   def show
-    @projects = user.authorized_projects
+    @personal_projects = user.personal_projects
+    @joined_projects = user.projects.joined(@user)
   end
 
   def new
-    @user = User.build_user
+    @user = User.new
   end
 
   def edit
@@ -36,15 +37,12 @@ class Admin::UsersController < Admin::ApplicationController
   end
 
   def create
-    admin = params[:user].delete("admin")
-
     opts = {
       force_random_password: true,
       password_expires_at: Time.now
     }
 
-    @user = User.build_user(params[:user].merge(opts), as: :admin)
-    @user.admin = (admin && admin.to_i > 0)
+    @user = User.new(user_params.merge(opts))
     @user.created_by_id = current_user.id
     @user.generate_password
     @user.skip_confirmation!
@@ -61,19 +59,15 @@ class Admin::UsersController < Admin::ApplicationController
   end
 
   def update
-    admin = params[:user].delete("admin")
-
-    if params[:user][:password].blank?
-      params[:user].delete(:password)
-      params[:user].delete(:password_confirmation)
-    end
-
-    if admin.present?
-      user.admin = !admin.to_i.zero?
+    if params[:user][:password].present?
+      user_params.merge(
+        password: params[:user][:password],
+        password_confirmation: params[:user][:password_confirmation],
+      )
     end
 
     respond_to do |format|
-      if user.update_attributes(params[:user], as: :admin)
+      if user.update_attributes(user_params)
         user.confirm!
         format.html { redirect_to [:admin, user], notice: 'User was successfully updated.' }
         format.json { head :ok }
@@ -99,9 +93,28 @@ class Admin::UsersController < Admin::ApplicationController
     end
   end
 
+  def remove_email
+    email = user.emails.find(params[:email_id])
+    email.destroy
+
+    respond_to do |format|
+      format.html { redirect_to :back, notice: "Successfully removed email." }
+      format.js { render nothing: true }
+    end
+  end
+
   protected
 
   def user
     @user ||= User.find_by!(username: params[:id])
+  end
+
+  def user_params
+    params.require(:user).permit(
+      :email, :remember_me, :bio, :name, :username,
+      :skype, :linkedin, :twitter, :website_url, :color_scheme_id, :theme_id, :force_random_password,
+      :extern_uid, :provider, :password_expires_at, :avatar, :hide_no_ssh_key,
+      :projects_limit, :can_create_group, :admin
+    )
   end
 end

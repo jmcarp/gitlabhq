@@ -38,22 +38,22 @@ class Groups < Spinach::FeatureSteps
   end
 
   Then 'I should see user "John Doe" in team list' do
-    projects_with_access = find(".ui-box .well-list")
+    projects_with_access = find(".panel .well-list")
     projects_with_access.should have_content("John Doe")
   end
 
   Then 'I should not see user "John Doe" in team list' do
-    projects_with_access = find(".ui-box .well-list")
+    projects_with_access = find(".panel .well-list")
     projects_with_access.should_not have_content("John Doe")
   end
 
   Then 'I should see user "Mary Jane" in team list' do
-    projects_with_access = find(".ui-box .well-list")
+    projects_with_access = find(".panel .well-list")
     projects_with_access.should have_content("Mary Jane")
   end
 
   Then 'I should not see user "Mary Jane" in team list' do
-    projects_with_access = find(".ui-box .well-list")
+    projects_with_access = find(".panel .well-list")
     projects_with_access.should_not have_content("Mary Jane")
   end
 
@@ -89,7 +89,7 @@ class Groups < Spinach::FeatureSteps
   Then 'I should see newly created group "Samurai"' do
     page.should have_content "Samurai"
     page.should have_content "Tokugawa Shogunate"
-    page.should have_content "You will only see events from projects in this group"
+    page.should have_content "Currently you are only seeing events from the"
   end
 
   And 'I change group "Owned" name to "new-name"' do
@@ -157,6 +157,43 @@ class Groups < Spinach::FeatureSteps
     # poltergeist always confirms popups.
   end
 
+  step 'I search for \'Mary\' member' do
+    within '.member-search-form' do
+      fill_in 'search', with: 'Mary'
+      click_button 'Search'
+    end
+  end
+
+  step 'I click on group milestones' do
+    click_link 'Milestones'
+  end
+
+  step 'I should see group milestones index page has no milestones' do
+    page.should have_content('No milestones to show')
+  end
+
+  step 'Group has projects with milestones' do
+    group_milestone
+  end
+
+  step 'I should see group milestones index page with milestones' do
+    page.should have_content('Version 7.2')
+    page.should have_content('GL-113')
+    page.should have_link('2 Issues', href: group_milestone_path("owned", "version-7-2", title: "Version 7.2"))
+    page.should have_link('3 Merge Requests', href: group_milestone_path("owned", "gl-113", title: "GL-113"))
+  end
+
+  step 'I click on one group milestone' do
+    click_link 'GL-113'
+  end
+
+  step 'I should see group milestone with all issues and MRs assigned to that milestone' do
+    page.should have_content('Milestone GL-113')
+    page.should have_content('Progress: 0 closed – 4 open')
+    page.should have_link(@issue1.title, href: project_issue_path(@project1, @issue1))
+    page.should have_link(@mr3.title, href: project_merge_request_path(@project3, @mr3))
+  end
+
   protected
 
   def assigned_to_me key
@@ -165,5 +202,69 @@ class Groups < Spinach::FeatureSteps
 
   def project
     Group.find_by(name: "Owned").projects.first
+  end
+
+  def group_milestone
+    group = Group.find_by(name: "Owned")
+
+    @project1 = create :project,
+                 group: group
+    project2 = create :project,
+                 path: 'gitlab-ci',
+                 group: group
+    @project3 = create :project,
+                 path: 'cookbook-gitlab',
+                 group: group
+    milestone1_project1 = create :milestone,
+                            title: "Version 7.2",
+                            project: @project1
+    milestone1_project2 = create :milestone,
+                            title: "Version 7.2",
+                            project: project2
+    milestone1_project3 = create :milestone,
+                            title: "Version 7.2",
+                            project: @project3
+    milestone2_project1 = create :milestone,
+                            title: "GL-113",
+                            project: @project1
+    milestone2_project2 = create :milestone,
+                            title: "GL-113",
+                            project: project2
+    milestone2_project3 = create :milestone,
+                            title: "GL-113",
+                            project: @project3
+    @issue1 = create :issue,
+               project: @project1,
+               assignee: current_user,
+               author: current_user,
+               milestone: milestone2_project1
+    issue2 = create :issue,
+               project: project2,
+               assignee: current_user,
+               author: current_user,
+               milestone: milestone1_project2
+    issue3 = create :issue,
+               project: @project3,
+               assignee: current_user,
+               author: current_user,
+               milestone: milestone1_project1
+    mr1 = create :merge_request,
+            source_project: @project1,
+            target_project: @project1,
+            assignee: current_user,
+            author: current_user,
+            milestone: milestone2_project1
+    mr2 = create :merge_request,
+            source_project: project2,
+            target_project: project2,
+            assignee: current_user,
+            author: current_user,
+            milestone: milestone2_project2
+    @mr3 = create :merge_request,
+            source_project: @project3,
+            target_project: @project3,
+            assignee: current_user,
+            author: current_user,
+            milestone: milestone2_project3
   end
 end

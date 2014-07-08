@@ -113,3 +113,29 @@ Feature: Groups
     Then I should see user "John Doe" in team list
     Then I should see user "Mary Jane" in team list
     Then I should not see the "Remove User From Group" button for "Mary Jane"
+
+  Scenario: Search member by name
+    Given "Mary Jane" is guest of group "Guest"
+    And I visit group "Guest" members page
+    When I search for 'Mary' member
+    Then I should see user "Mary Jane" in team list
+    Then I should not see user "John Doe" in team list
+
+
+  Scenario: I should see group "Owned" milestone index page with no milestones
+    When I visit group "Owned" page
+    And I click on group milestones
+    Then I should see group milestones index page has no milestones
+
+  Scenario: I should see group "Owned" milestone index page with milestones
+    Given Group has projects with milestones
+    When I visit group "Owned" page
+    And I click on group milestones
+    Then I should see group milestones index page with milestones
+
+  Scenario: I should see group "Owned" milestone show page
+    Given Group has projects with milestones
+    When I visit group "Owned" page
+    And I click on group milestones
+    And I click on one group milestone
+    Then I should see group milestone with all issues and MRs assigned to that milestone

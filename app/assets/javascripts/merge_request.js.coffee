@@ -43,7 +43,7 @@ class MergeRequest
       , 'json'
 
   bindEvents: ->
-    this.$('.nav-tabs').on 'click', 'a', (event) =>
+    this.$('.merge-request-tabs').on 'click', 'a', (event) =>
       a = $(event.currentTarget)
 
       href = a.attr('href')
@@ -51,23 +51,35 @@ class MergeRequest
 
       event.preventDefault()
 
-    this.$('.nav-tabs').on 'click', 'li', (event) =>
+    this.$('.merge-request-tabs').on 'click', 'li', (event) =>
       this.activateTab($(event.currentTarget).data('action'))
 
     this.$('.accept_merge_request').on 'click', ->
       $('.automerge_widget.can_be_merged').hide()
       $('.merge-in-progress').show()
 
+    this.$('.remove_source_branch').on 'click', ->
+      $('.remove_source_branch_widget').hide()
+      $('.remove_source_branch_in_progress').show()
+
+    this.$(".remove_source_branch").on "ajax:success", (e, data, status, xhr) ->
+      location.reload()
+
+    this.$(".remove_source_branch").on "ajax:error", (e, data, status, xhr) =>
+      this.$('.remove_source_branch_widget').hide()
+      this.$('.remove_source_branch_in_progress').hide()
+      this.$('.remove_source_branch_widget.failed').show()
+
   activateTab: (action) ->
-    this.$('.nav-tabs li').removeClass 'active'
+    this.$('.merge-request-tabs li').removeClass 'active'
     this.$('.tab-content').hide()
     switch action
       when 'diffs'
-        this.$('.nav-tabs .diffs-tab').addClass 'active'
+        this.$('.merge-request-tabs .diffs-tab').addClass 'active'
         this.loadDiff() unless @diffs_loaded
         this.$('.diffs').show()
       else
-        this.$('.nav-tabs .notes-tab').addClass 'active'
+        this.$('.merge-request-tabs .notes-tab').addClass 'active'
         this.$('.notes').show()
 
   showState: (state) ->
@@ -76,17 +88,31 @@ class MergeRequest
 
   showCiState: (state) ->
     $('.ci_widget').hide()
-    $('.ci_widget.ci-' + state).show()
+    allowed_states = ["failed", "running", "pending", "success"]
+    if state in allowed_states
+      $('.ci_widget.ci-' + state).show()
+    else
+      $('.ci_widget.ci-error').show()
+
+    switch state
+      when "success"
+        $('.mr-state-widget').addClass("panel-success")
+      when "failed"
+        $('.mr-state-widget').addClass("panel-danger")
+      when "running", "pending"
+        $('.mr-state-widget').addClass("panel-warning")
+
+
 
   loadDiff: (event) ->
     $.ajax
       type: 'GET'
-      url: this.$('.nav-tabs .diffs-tab a').attr('href')
+      url: this.$('.merge-request-tabs .diffs-tab a').attr('href')
       beforeSend: =>
-        this.$('.status').addClass 'loading'
+        this.$('.mr-loading-status .loading').show()
       complete: =>
         @diffs_loaded = true
-        this.$('.status').removeClass 'loading'
+        this.$('.mr-loading-status .loading').hide()
       success: (data) =>
         this.$(".diffs").html(data.html)
       dataType: 'json'

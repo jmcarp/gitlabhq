@@ -2,7 +2,7 @@
   System hooks
 
 %p.light
-  #{link_to "System hooks ", help_system_hooks_path, class: "vlink"} can be
+  #{link_to "System hooks ", help_page_path("system_hooks", "system_hooks"), class: "vlink"} can be
   used for binding events when GitLab creates a User or Project.
 
 %hr
@@ -22,14 +22,16 @@
 %hr
 
 -if @hooks.any?
-  .ui-box
-    .title
+  .panel.panel-default
+    .panel-heading
       System hooks (#{@hooks.count})
     %ul.well-list
       - @hooks.each do |hook|
         %li
+          .list-item-name
+            = link_to admin_hook_path(hook) do
+              %strong= hook.url
+
           .pull-right
             = link_to 'Test Hook', admin_hook_test_path(hook), class: "btn btn-small"
             = link_to 'Remove', admin_hook_path(hook), data: { confirm: 'Are you sure?' }, method: :delete, class: "btn btn-remove btn-small"
-          = link_to admin_hook_path(hook) do
-            %strong= hook.url
