@@ -108,17 +108,12 @@ module API
 
         admin = attrs.delete(:admin)
         user.admin = admin unless admin.nil?
-<<<<<<< HEAD
         # Can't bulk-assign encrypted password
         if params[:encrypted_password]
           user.encrypted_password = params[:encrypted_password]
         end
-        if user.update_attributes(attrs, as: :admin)
-          present user, with: Entities::User
-=======
         if user.update_attributes(attrs)
           present user, with: Entities::UserFull
->>>>>>> 4c3785afbf24b39a8574311b9ba36edbc6e26bc2
         else
           not_found!
         end
