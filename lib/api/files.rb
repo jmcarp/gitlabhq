@@ -72,8 +72,10 @@ module API
       post ":id/repository/files" do
         authorize! :push_code, user_project
 
-        required_attributes! [:file_path, :branch_name, :content, :commit_message]
-        attrs = attributes_for_keys [:file_path, :branch_name, :content, :commit_message, :encoding]
+        required_attributes! [:file_path, :branch_name, :commit_message]
+        attrs = attributes_for_keys [:file_path, :branch_name, :commit_message, :encoding]
+        # Allow for empty `content` value
+        attrs[:content] = params[:content] or ''
         branch_name = attrs.delete(:branch_name)
         file_path = attrs.delete(:file_path)
         if params[:user_id]
@@ -114,8 +116,10 @@ module API
       put ":id/repository/files" do
         authorize! :push_code, user_project
 
-        required_attributes! [:file_path, :branch_name, :content, :commit_message]
-        attrs = attributes_for_keys [:file_path, :branch_name, :content, :commit_message, :encoding]
+        required_attributes! [:file_path, :branch_name, :commit_message]
+        attrs = attributes_for_keys [:file_path, :branch_name, :commit_message, :encoding]
+        # Allow for empty `content` value
+        attrs[:content] = params[:content] or ''
         branch_name = attrs.delete(:branch_name)
         file_path = attrs.delete(:file_path)
         if params[:user_id]
